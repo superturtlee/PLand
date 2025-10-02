@@ -1,4 +1,5 @@
 #include "pland/land/LandScheduler.h"
+#include "ll/api/chrono/GameChrono.h"
 #include "ll/api/coro/CoroTask.h"
 #include "ll/api/event/EventBus.h"
 #include "ll/api/event/ListenerBase.h"
@@ -20,6 +21,7 @@
 #include <cstdio>
 #include <stdexcept>
 #include <vector>
+
 
 namespace land {
 
@@ -60,8 +62,7 @@ LandScheduler::LandScheduler() {
         auto& player   = ev.getPlayer();
         auto  registry = PLand::getInstance().getLandRegistry();
 
-        if (auto settings = registry->getPlayerSettings(player.getUuid().asString());
-            settings && !settings->showEnterLandTitle) {
+        if (auto settings = registry->getPlayerSettings(player.getUuid()); settings && !settings->showEnterLandTitle) {
             return; // 如果玩家设置不显示进入领地提示,则不显示
         }
 
@@ -73,7 +74,7 @@ LandScheduler::LandScheduler() {
         SetTitlePacket title(SetTitlePacket::TitleType::Title);
         SetTitlePacket subTitle(SetTitlePacket::TitleType::Subtitle);
 
-        if (land->isOwner(player.getUuid().asString())) {
+        if (land->isOwner(player.getUuid())) {
             title.mTitleText    = land->getName();
             subTitle.mTitleText = "欢迎回来"_trf(player);
         } else {
@@ -87,7 +88,7 @@ LandScheduler::LandScheduler() {
 
     ll::coro::keepThis([quit = mQuit, sleep = mEventSchedulingSleep, this]() -> ll::coro::CoroTask<> {
         while (!quit->load()) {
-            co_await sleep->sleepFor(5_tick);
+            co_await sleep->sleepFor(ll::chrono::ticks{5});
             if (quit->load()) {
                 break;
             }
@@ -115,7 +116,7 @@ LandScheduler::LandScheduler() {
     if (Config::cfg.land.tip.bottomContinuedTip) {
         ll::coro::keepThis([quit = mQuit, sleep = mLandTipSchedulingSleep, this]() -> ll::coro::CoroTask<> {
             while (!quit->load()) {
-                co_await sleep->sleepFor(Config::cfg.land.tip.bottomTipFrequency * 20_tick);
+                co_await sleep->sleepFor(Config::cfg.land.tip.bottomTipFrequency * ll::chrono::ticks{20});
                 if (quit->load()) {
                     break;
                 }
@@ -207,7 +208,7 @@ void LandScheduler::tickLandTip() {
             continue;
         }
 
-        if (auto settings = registry->getPlayerSettings(player->getUuid().asString());
+        if (auto settings = registry->getPlayerSettings(player->getUuid());
             settings && !settings->showBottomContinuedTip) {
             continue; // 如果玩家设置不显示底部提示，则跳过
         }
@@ -218,11 +219,11 @@ void LandScheduler::tickLandTip() {
         }
 
         auto& owner = land->getOwner();
-        auto  info  = playerInfo.fromUuid(UUIDm::fromString(owner));
-        if (land->isOwner(player->getUuid().asString())) {
+        auto  info  = playerInfo.fromUuid(owner);
+        if (land->isOwner(player->getUuid())) {
             pkt.mTitleText = "[Land] 当前正在领地 {}"_trf(*player, land->getName());
         } else {
-            pkt.mTitleText = "[Land] 这里是 {} 的领地"_trf(*player, info.has_value() ? info->name : owner);
+            pkt.mTitleText = "[Land] 这里是 {} 的领地"_trf(*player, info.has_value() ? info->name : owner.asString());
         }
 
         pkt.sendTo(*player);

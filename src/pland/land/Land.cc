@@ -1,12 +1,14 @@
 #include "pland/land/Land.h"
 #include "LandCreateValidator.h"
 #include "LandTemplatePermTable.h"
+#include "mc/platform/UUID.h"
 #include "pland/Global.h"
 #include "pland/PLand.h"
 #include "pland/infra/Config.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/utils/JSON.h"
 #include <stack>
+#include <unordered_set>
 #include <vector>
 
 
@@ -15,12 +17,28 @@ namespace land {
 
 Land::Land() = default;
 Land::Land(LandContext ctx) : mContext(std::move(ctx)) {}
-Land::Land(LandAABB const& pos, LandDimid dimid, bool is3D, UUIDs const& owner) {
+Land::Land(LandAABB const& pos, LandDimid dimid, bool is3D, mce::UUID const& owner) {
     mContext.mPos           = pos;
     mContext.mLandDimid     = dimid;
     mContext.mIs3DLand      = is3D;
-    mContext.mLandOwner     = owner;
+    mContext.mLandOwner     = owner.asString();
     mContext.mLandPermTable = PLand::getInstance().getLandRegistry()->getLandTemplatePermTable().get();
+
+    _initCache();
+}
+
+void Land::_initCache() {
+    mCacheOwner = std::nullopt;
+    mCacheMembers.clear();
+
+    if (!mContext.mOwnerDataIsXUID) {
+        mCacheOwner = mce::UUID{mContext.mLandOwner};
+    }
+
+    mCacheMembers.reserve(mContext.mLandMembers.size());
+    for (auto const& member : mContext.mLandMembers) {
+        mCacheMembers.emplace(mce::UUID{member});
+    }
 }
 
 SharedLand Land::getSelfFromRegistry() const {
@@ -61,19 +79,31 @@ void                 Land::setPermTable(LandPermTable permTable) {
     mDirtyCounter.increment();
 }
 
-UUIDs const& Land::getOwner() const { return mContext.mLandOwner; }
-void         Land::setOwner(UUIDs const& uuid) {
-    mContext.mLandOwner = uuid;
+mce::UUID const& Land::getOwner() const {
+    if (!mCacheOwner) {
+        if (mContext.mOwnerDataIsXUID) {
+            return mce::UUID::EMPTY();
+        }
+        mCacheOwner = mce::UUID(mContext.mLandOwner);
+    }
+    return *mCacheOwner;
+}
+void Land::setOwner(mce::UUID const& uuid) {
+    mCacheOwner         = uuid;
+    mContext.mLandOwner = uuid.asString();
     mDirtyCounter.increment();
 }
+std::string const& Land::getRawOwner() const { return mContext.mLandOwner; }
 
-std::vector<UUIDs> const& Land::getMembers() const { return mContext.mLandMembers; }
-void                      Land::addLandMember(UUIDs const& uuid) {
-    mContext.mLandMembers.push_back(uuid);
+std::unordered_set<mce::UUID> const& Land::getMembers() const { return mCacheMembers; }
+void                                 Land::addLandMember(mce::UUID const& uuid) {
+    mCacheMembers.insert(uuid);
+    mContext.mLandMembers.emplace_back(uuid.asString());
     mDirtyCounter.increment();
 }
-void Land::removeLandMember(UUIDs const& uuid) {
-    std::erase_if(mContext.mLandMembers, [uuid](UUIDs const& u) { return u == uuid; });
+void Land::removeLandMember(mce::UUID const& uuid) {
+    mCacheMembers.erase(uuid);
+    std::erase_if(mContext.mLandMembers, [uuid = uuid.asString()](auto const& u) { return u == uuid; });
     mDirtyCounter.increment();
 }
 
@@ -96,10 +126,8 @@ void Land::setOriginalBuyPrice(int price) {
 }
 
 bool Land::is3D() const { return mContext.mIs3DLand; }
-bool Land::isOwner(UUIDs const& uuid) const { return mContext.mLandOwner == uuid; }
-bool Land::isMember(UUIDs const& uuid) const {
-    return std::ranges::find(mContext.mLandMembers, uuid) != mContext.mLandMembers.end();
-}
+bool Land::isOwner(mce::UUID const& uuid) const { return mCacheOwner == uuid; }
+bool Land::isMember(mce::UUID const& uuid) const { return mCacheMembers.contains(uuid); }
 bool Land::isConvertedLand() const { return mContext.mIsConvertedLand; }
 bool Land::isOwnerDataIsXUID() const { return mContext.mOwnerDataIsXUID; }
 bool Land::isDirty() const { return mDirtyCounter.isDirty(); }
@@ -263,22 +291,24 @@ bool Land::isCollision(BlockPos const& pos1, BlockPos const& pos2) const {
 }
 
 
-LandPermType Land::getPermType(UUIDs const& uuid) const {
-    if (uuid.empty()) return LandPermType::Guest; // empty uuid is guest
+LandPermType Land::getPermType(mce::UUID const& uuid) const {
     if (isOwner(uuid)) return LandPermType::Owner;
     if (isMember(uuid)) return LandPermType::Member;
     return LandPermType::Guest;
 }
 
-void Land::updateXUIDToUUID(UUIDs const& ownerUUID) {
+void Land::updateXUIDToUUID(mce::UUID const& ownerUUID) {
     if (isConvertedLand() && isOwnerDataIsXUID()) {
-        mContext.mLandOwner       = ownerUUID;
+        setOwner(ownerUUID);
         mContext.mOwnerDataIsXUID = false;
         mDirtyCounter.increment();
     }
 }
 
-void           Land::load(nlohmann::json& json) { JSON::jsonToStruct(json, mContext); }
+void Land::load(nlohmann::json& json) {
+    JSON::jsonToStruct(json, mContext);
+    _initCache();
+}
 nlohmann::json Land::dump() const { return JSON::structTojson(mContext); }
 void           Land::save(bool force) {
     if (isDirty() || force) {

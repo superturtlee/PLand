@@ -1,13 +1,17 @@
 #include "LandCacheViewer.h"
-#include "ll/api/service/PlayerInfo.h"
-#include "mc/platform/UUID.h"
+
 #include "pland/PLand.h"
 #include "pland/land/LandRegistry.h"
 
+#include "mc/platform/UUID.h"
 
+#include "ll/api/service/PlayerInfo.h"
+
+#include <filesystem>
 #include <imgui_internal.h>
 #include <memory>
 #include <string>
+
 
 namespace devtool::internals {
 
@@ -45,8 +49,8 @@ void LandCacheViewerWindow::handleEditLand(land::SharedLand land) {
 void LandCacheViewerWindow::handleExportLand(land::SharedLand land) {
     namespace fs = std::filesystem;
     auto dir     = land::PLand::getInstance().getSelf().getModDir() / "devtool_exports";
-    if (!fs::exists(dir)) {
-        fs::create_directory(dir);
+    if (!std::filesystem::exists(dir)) {
+        std::filesystem::create_directory(dir);
     }
     auto          file = dir / fmt::format("land_{}.json", land->getId());
     std::ofstream ofs(file);
@@ -61,8 +65,8 @@ void LandCacheViewerWindow::preBuildData() {
     for (const auto& owner : lands_ | std::views::keys) {
         // 更新玩家名缓存
         if (!realNames_.contains(owner)) {
-            auto info         = playerInfo.fromUuid(mce::UUID::fromString(owner));
-            realNames_[owner] = info.has_value() ? info->name : owner;
+            auto info         = playerInfo.fromUuid(owner);
+            realNames_[owner] = info.has_value() ? info->name : owner.asString();
         }
         // 更新 CheckBox
         if (!isShow_.contains(owner)) {
@@ -246,6 +250,7 @@ void LandEditor::renderMenuElement() {
             try {
                 auto json = nlohmann::json::parse(editor_.GetText());
                 land->load(json);
+                land->save(true); // 由于 load 方法不会标记数据已更改，主动强制保存
             } catch (...) {
                 land->load(backup);
                 land::PLand::getInstance().getSelf().getLogger().error("Failed to parse json");

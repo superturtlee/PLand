@@ -3,6 +3,7 @@
 #include "fmt/core.h"
 #include "ll/api/data/KeyValueDB.h"
 #include "ll/api/i18n/I18n.h"
+#include "mc/platform/UUID.h"
 #include "mc/world/actor/player/Player.h"
 #include "mc/world/level/BlockPos.h"
 #include "nlohmann/json_fwd.hpp"
@@ -41,7 +42,13 @@ void LandRegistry::_loadOperators() {
         mDB->set(DbOperatorDataKey, "[]"); // empty array
     }
     auto ops = JSON::parse(*mDB->get(DbOperatorDataKey));
-    JSON::jsonToStructNoMerge(ops, mLandOperators);
+    for (auto& op : ops) {
+        auto uuidStr = op.get<std::string>();
+        if (!mce::UUID::canParse(uuidStr)) {
+            PLand::getInstance().getSelf().getLogger().warn("Invalid operator UUID: {}", uuidStr);
+        }
+        mLandOperators.emplace_back(uuidStr);
+    }
 }
 
 void LandRegistry::_loadPlayerSettings() {
@@ -60,19 +67,23 @@ void LandRegistry::_loadPlayerSettings() {
     }
 }
 
-void LandRegistry::_connectDatabaseAndCheckVersion() {
+void LandRegistry::_openDatabaseAndEnsureVersion() {
     auto&       self    = land::PLand::getInstance().getSelf();
     auto&       logger  = self.getLogger();
     auto const& dataDir = self.getDataDir();
     auto const  dbDir   = dataDir / DbDirName;
 
-    bool const isNewCreatedDB = !fs::exists(dbDir); // 是否是新建的数据库
+    bool const isNewCreatedDB = !std::filesystem::exists(dbDir); // 是否是新建的数据库
 
     auto backup = [&]() {
         auto const backupDir =
             dataDir
             / ("backup_db_" + std::to_string(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())));
-        fs::copy(dbDir, backupDir, fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+        std::filesystem::copy(
+            dbDir,
+            backupDir,
+            std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing
+        );
     };
 
     if (!mDB) {
@@ -124,7 +135,7 @@ void LandRegistry::_connectDatabaseAndCheckVersion() {
     }
 }
 
-void LandRegistry::_checkVersionAndTryAdaptBreakingChanges(nlohmann::json& landData) {
+void LandRegistry::_migrateLegacyKeysIfNeeded(nlohmann::json& landData) {
     constexpr int LANDDATA_NEW_POS_KEY_VERSION = 15; // 在此版本后，LandAABB 使用了新的键名
 
     if (landData["version"].get<int>() < LANDDATA_NEW_POS_KEY_VERSION) {
@@ -158,7 +169,7 @@ void LandRegistry::_loadLands() {
         if (!isLandData(key)) continue;
 
         auto json = JSON::parse(value);
-        _checkVersionAndTryAdaptBreakingChanges(json);
+        _migrateLegacyKeysIfNeeded(json);
 
         auto land = Land::make();
         land->load(json);
@@ -249,7 +260,7 @@ LandRegistry::LandRegistry() {
     auto& logger = land::PLand::getInstance().getSelf().getLogger();
 
     logger.trace("打开数据库...");
-    _connectDatabaseAndCheckVersion();
+    _openDatabaseAndEnsureVersion();
 
     auto lock = std::unique_lock<std::shared_mutex>(mMutex);
     logger.trace("加载操作员...");
@@ -293,12 +304,11 @@ LandRegistry::~LandRegistry() {
     if (mThread.joinable()) mThread.join();
 }
 
-bool LandRegistry::isOperator(UUIDs const& uuid) const {
-    if (uuid.empty()) return false;
+bool LandRegistry::isOperator(mce::UUID const& uuid) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
     return std::find(mLandOperators.begin(), mLandOperators.end(), uuid) != mLandOperators.end();
 }
-bool LandRegistry::addOperator(UUIDs const& uuid) {
+bool LandRegistry::addOperator(mce::UUID const& uuid) {
     if (isOperator(uuid)) {
         return false;
     }
@@ -306,7 +316,7 @@ bool LandRegistry::addOperator(UUIDs const& uuid) {
     mLandOperators.push_back(uuid);
     return true;
 }
-bool LandRegistry::removeOperator(UUIDs const& uuid) {
+bool LandRegistry::removeOperator(mce::UUID const& uuid) {
     std::unique_lock<std::shared_mutex> lock(mMutex); // 获取锁
 
     auto iter = std::find(mLandOperators.begin(), mLandOperators.end(), uuid);
@@ -316,13 +326,13 @@ bool LandRegistry::removeOperator(UUIDs const& uuid) {
     mLandOperators.erase(iter);
     return true;
 }
-std::vector<UUIDs> const& LandRegistry::getOperators() const {
+std::vector<mce::UUID> const& LandRegistry::getOperators() const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
     return mLandOperators;
 }
 
 
-PlayerSettings* LandRegistry::getPlayerSettings(UUIDs const& uuid) {
+PlayerSettings* LandRegistry::getPlayerSettings(mce::UUID const& uuid) {
     std::shared_lock<std::shared_mutex> lock(mMutex);
     auto                                iter = mPlayerSettings.find(uuid);
     if (iter == mPlayerSettings.end()) {
@@ -330,12 +340,12 @@ PlayerSettings* LandRegistry::getPlayerSettings(UUIDs const& uuid) {
     }
     return &iter->second;
 }
-bool LandRegistry::setPlayerSettings(UUIDs const& uuid, PlayerSettings settings) {
+bool LandRegistry::setPlayerSettings(mce::UUID const& uuid, PlayerSettings settings) {
     std::unique_lock<std::shared_mutex> lock(mMutex);
     mPlayerSettings[uuid] = std::move(settings);
     return true;
 }
-bool LandRegistry::hasPlayerSettings(UUIDs const& uuid) const {
+bool LandRegistry::hasPlayerSettings(mce::UUID const& uuid) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
     return mPlayerSettings.find(uuid) != mPlayerSettings.end();
 }
@@ -631,7 +641,7 @@ std::vector<SharedLand> LandRegistry::getLands(LandDimid dimid) const {
     }
     return lands;
 }
-std::vector<SharedLand> LandRegistry::getLands(UUIDs const& uuid, bool includeShared) const {
+std::vector<SharedLand> LandRegistry::getLands(mce::UUID const& uuid, bool includeShared) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
     std::vector<SharedLand> lands;
@@ -642,7 +652,7 @@ std::vector<SharedLand> LandRegistry::getLands(UUIDs const& uuid, bool includeSh
     }
     return lands;
 }
-std::vector<SharedLand> LandRegistry::getLands(UUIDs const& uuid, LandDimid dimid) const {
+std::vector<SharedLand> LandRegistry::getLands(mce::UUID const& uuid, LandDimid dimid) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
     std::vector<SharedLand> lands;
@@ -653,20 +663,20 @@ std::vector<SharedLand> LandRegistry::getLands(UUIDs const& uuid, LandDimid dimi
     }
     return lands;
 }
-std::unordered_map<UUIDs, std::unordered_set<SharedLand>> LandRegistry::getLandsByOwner() const {
+std::unordered_map<mce::UUID, std::unordered_set<SharedLand>> LandRegistry::getLandsByOwner() const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
-    std::unordered_map<UUIDs, std::unordered_set<SharedLand>> lands;
+    std::unordered_map<mce::UUID, std::unordered_set<SharedLand>> lands;
     for (const auto& ptr : mLandCache | std::views::values) {
         auto& owner = ptr->getOwner();
         lands[owner].insert(ptr);
     }
     return lands;
 }
-std::unordered_map<UUIDs, std::unordered_set<SharedLand>> LandRegistry::getLandsByOwner(LandDimid dimid) const {
+std::unordered_map<mce::UUID, std::unordered_set<SharedLand>> LandRegistry::getLandsByOwner(LandDimid dimid) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
-    std::unordered_map<UUIDs, std::unordered_set<SharedLand>> res;
+    std::unordered_map<mce::UUID, std::unordered_set<SharedLand>> res;
     for (const auto& ptr : mLandCache | std::views::values) {
         if (ptr->getDimensionId() != dimid) {
             continue;
@@ -678,7 +688,7 @@ std::unordered_map<UUIDs, std::unordered_set<SharedLand>> LandRegistry::getLands
 }
 
 
-LandPermType LandRegistry::getPermType(UUIDs const& uuid, LandID id, bool includeOperator) const {
+LandPermType LandRegistry::getPermType(mce::UUID const& uuid, LandID id, bool includeOperator) const {
     std::shared_lock<std::shared_mutex> lock(mMutex);
 
     if (includeOperator && isOperator(uuid)) return LandPermType::Operator;
@@ -806,6 +816,31 @@ LandRegistry::getLandAt(BlockPos const& pos1, BlockPos const& pos2, LandDimid di
         }
     }
     return lands;
+}
+
+
+std::vector<SharedLand> LandRegistry::getLandsWhere(FilterCallback const& callback) const {
+    std::shared_lock<std::shared_mutex> lock(mMutex);
+
+    std::vector<SharedLand> result;
+    for (auto const& [id, land] : mLandCache) {
+        if (callback(land)) {
+            result.push_back(land);
+        }
+    }
+    return result;
+}
+
+std::vector<SharedLand> LandRegistry::getLandsWhereRaw(ContextFilter const& filter) const {
+    std::shared_lock<std::shared_mutex> lock(mMutex);
+
+    std::vector<SharedLand> result;
+    for (auto const& [id, land] : mLandCache) {
+        if (filter(land->mContext)) {
+            result.push_back(land);
+        }
+    }
+    return result;
 }
 
 

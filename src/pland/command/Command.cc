@@ -1,33 +1,9 @@
-#include "pland/command/Command.h"
-#include "Pland/gui/LandBuyGUI.h"
-#include "ll/api/command/CommandRegistrar.h"
-#include "ll/api/form/CustomForm.h"
-#include "ll/api/service/Bedrock.h"
 #include "magic_enum.hpp"
-#include "mc/deps/core/math/Color.h"
-#include "mc/deps/core/string/HashedString.h"
-#include "mc/deps/core/utility/optional_ref.h"
-#include "mc/nbt/CompoundTag.h"
-#include "mc/network/ServerNetworkHandler.h"
-#include "mc/network/packet/SetTimePacket.h"
-#include "mc/platform/UUID.h"
-#include "mc/server/commands/CommandOriginType.h"
-#include "mc/server/commands/CommandPositionFloat.h"
-#include "mc/server/commands/CommandSelector.h"
-#include "mc/world/actor/ActorDefinitionIdentifier.h"
-#include "mc/world/actor/agent/agent_commands/Command.h"
-#include "mc/world/actor/player/Player.h"
-#include "mc/world/level/BlockPos.h"
-#include "mc/world/level/BlockSource.h"
-#include "mc/world/level/ChunkBlockPos.h"
-#include "mc/world/level/ChunkPos.h"
-#include "mc/world/level/Level.h"
-#include "mc/world/level/block/Block.h"
-#include "mc/world/level/block/actor/BlockActor.h"
-#include "mc/world/level/chunk/LevelChunk.h"
-#include "mc/world/level/dimension/Dimension.h"
+
 #include "pland/Global.h"
 #include "pland/PLand.h"
+#include "pland/command/Command.h"
+#include "pland/gui/LandBuyGUI.h"
 #include "pland/gui/LandMainMenuGUI.h"
 #include "pland/gui/LandManagerGUI.h"
 #include "pland/gui/LandOperatorManagerGUI.h"
@@ -41,32 +17,55 @@
 #include "pland/selector/SubLandSelector.h"
 #include "pland/utils/McUtils.h"
 #include "pland/utils/Utils.h"
+
+#include "ll/api/command/Command.h"
+#include "ll/api/command/CommandHandle.h"
+#include "ll/api/command/CommandRegistrar.h"
+#include "ll/api/form/CustomForm.h"
+#include "ll/api/i18n/I18n.h"
+#include "ll/api/io/Logger.h"
+#include "ll/api/service/Bedrock.h"
+#include "ll/api/service/PlayerInfo.h"
+#include "ll/api/service/Service.h"
+#include "ll/api/utils/HashUtils.h"
+
+#include "mc/deps/core/math/Color.h"
+#include "mc/deps/core/string/HashedString.h"
+#include "mc/deps/core/utility/optional_ref.h"
+#include "mc/nbt/CompoundTag.h"
+#include "mc/network/ServerNetworkHandler.h"
+#include "mc/network/packet/LevelChunkPacket.h"
+#include "mc/network/packet/SetTimePacket.h"
+#include "mc/network/packet/TextPacket.h"
+#include "mc/platform/UUID.h"
+#include "mc/server/ServerLevel.h"
+#include "mc/server/ServerPlayer.h"
+#include "mc/server/commands/CommandOrigin.h"
+#include "mc/server/commands/CommandOriginType.h"
+#include "mc/server/commands/CommandOutput.h"
+#include "mc/server/commands/CommandParameterOption.h"
+#include "mc/server/commands/CommandPermissionLevel.h"
+#include "mc/server/commands/CommandPositionFloat.h"
+#include "mc/server/commands/CommandRegistry.h"
+#include "mc/server/commands/CommandSelector.h"
+#include "mc/world/actor/Actor.h"
+#include "mc/world/actor/ActorDefinitionIdentifier.h"
+#include "mc/world/actor/ActorType.h"
+#include "mc/world/actor/agent/agent_commands/Command.h"
+#include "mc/world/actor/player/Player.h"
+#include "mc/world/level/BlockPos.h"
+#include "mc/world/level/BlockSource.h"
+#include "mc/world/level/ChunkBlockPos.h"
+#include "mc/world/level/ChunkPos.h"
+#include "mc/world/level/GameType.h"
+#include "mc/world/level/Level.h"
+#include "mc/world/level/block/Block.h"
+#include "mc/world/level/block/actor/BlockActor.h"
+#include "mc/world/level/chunk/LevelChunk.h"
+#include "mc/world/level/dimension/Dimension.h"
+
 #include <algorithm>
 #include <filesystem>
-#include <ll/api/command/Command.h>
-#include <ll/api/command/CommandHandle.h>
-#include <ll/api/command/CommandRegistrar.h>
-#include <ll/api/i18n/I18n.h>
-#include <ll/api/io/Logger.h>
-#include <ll/api/service/Bedrock.h>
-#include <ll/api/service/PlayerInfo.h>
-#include <ll/api/service/Service.h>
-#include <ll/api/utils/HashUtils.h>
-#include <mc/network/packet/LevelChunkPacket.h>
-#include <mc/network/packet/TextPacket.h>
-#include <mc/server/ServerLevel.h>
-#include <mc/server/ServerPlayer.h>
-#include <mc/server/commands/CommandOrigin.h>
-#include <mc/server/commands/CommandOriginType.h>
-#include <mc/server/commands/CommandOutput.h>
-#include <mc/server/commands/CommandParameterOption.h>
-#include <mc/server/commands/CommandPermissionLevel.h>
-#include <mc/server/commands/CommandRegistry.h>
-#include <mc/server/commands/CommandSelector.h>
-#include <mc/world/actor/Actor.h>
-#include <mc/world/actor/ActorType.h>
-#include <mc/world/actor/player/Player.h>
-#include <mc/world/level/GameType.h>
 #include <memory>
 #include <sstream>
 #include <vector>
@@ -125,8 +124,8 @@ static auto const Operator = [](CommandOrigin const& ori, CommandOutput& out, Op
         if (!pl) {
             continue;
         }
-        auto uid  = pl->getUuid().asString();
-        auto name = pl->getRealName();
+        auto& uid  = pl->getUuid();
+        auto  name = pl->getRealName();
         if (param.type == OperatorType::Op) {
             if (db.isOperator(uid)) {
                 mc_utils::sendText(out, "{} 已经是管理员，请不要重复添加"_tr(name));
@@ -145,8 +144,8 @@ static auto const Operator = [](CommandOrigin const& ori, CommandOutput& out, Op
 
 static auto const ListOperator = [](CommandOrigin const& ori, CommandOutput& out) {
     CHECK_TYPE(ori, out, CommandOriginType::DedicatedServer);
-    auto& pls = PLand::getInstance().getLandRegistry()->getOperators();
-    if (pls.empty()) {
+    auto& operators = PLand::getInstance().getLandRegistry()->getOperators();
+    if (operators.empty()) {
         mc_utils::sendText(out, "当前没有管理员"_tr());
         return;
     }
@@ -154,12 +153,12 @@ static auto const ListOperator = [](CommandOrigin const& ori, CommandOutput& out
     std::ostringstream oss;
     oss << "管理员: "_tr();
     auto& infoDb = ll::service::PlayerInfo::getInstance();
-    for (auto& pl : pls) {
-        auto info = infoDb.fromUuid(mce::UUID::fromString(pl));
+    for (auto& oper : operators) {
+        auto info = infoDb.fromUuid(oper);
         if (info) {
             oss << info->name;
         } else {
-            oss << pl;
+            oss << oper.asString();
         }
         oss << " | ";
     }
@@ -194,8 +193,8 @@ static auto const New = [](CommandOrigin const& ori, CommandOutput& out, NewPara
             return;
         }
 
-        auto uuidStr = player.getUuid().asString();
-        if (!land->isOwner(uuidStr)) {
+        auto& uuid = player.getUuid();
+        if (!land->isOwner(uuid)) {
             mc_utils::sendText(out, "当前位置不是你的领地"_trf(player));
             return;
         }
@@ -315,22 +314,22 @@ static auto const Draw = [](CommandOrigin const& ori, CommandOutput& out, DrawPa
 
 
 struct ImportParam {
-    bool   clearDb;
-    string relationship_file;
-    string data_file;
+    bool        clearDb;
+    std::string relationship_file;
+    std::string data_file;
 };
 static auto const Import = [](CommandOrigin const& ori, CommandOutput& out, ImportParam const& param) {
     CHECK_TYPE(ori, out, CommandOriginType::DedicatedServer);
 
-    if (!fs::exists(param.relationship_file)) {
+    if (!std::filesystem::exists(param.relationship_file)) {
         out.error("未找到 relationship.json 文件"_tr());
         return;
     }
-    if (!fs::exists(param.data_file)) {
+    if (!std::filesystem::exists(param.data_file)) {
         out.error("未找到 data.json 文件"_tr());
         return;
     }
-    if (fs::path(param.relationship_file).filename() != "relationship.json") {
+    if (std::filesystem::path(param.relationship_file).filename() != "relationship.json") {
         out.error("relationship.json 文件名错误"_tr());
         return;
     }
@@ -353,7 +352,7 @@ static auto const SetLandTeleportPos = [](CommandOrigin const& ori, CommandOutpu
         return;
     }
 
-    auto uuid = player.getUuid().asString();
+    auto& uuid = player.getUuid();
     if (!land->isOwner(uuid) && !db.isOperator(uuid)) {
         mc_utils::sendText<mc_utils::LogLevel::Error>(out, "您不是领地主人，无法设置传送点"_trf(player));
         return;
@@ -375,8 +374,8 @@ static auto const SetLanguage = [](CommandOrigin const& ori, CommandOutput& out)
         PlayerSettings::SYSTEM_LOCALE_CODE()
     };
     if (langs.size() == 2) {
-        fs::path const& langDir = land::PLand::getInstance().getSelf().getLangDir();
-        for (auto const& lang : fs::directory_iterator(langDir)) {
+        std::filesystem::path const& langDir = land::PLand::getInstance().getSelf().getLangDir();
+        for (auto const& lang : std::filesystem::directory_iterator(langDir)) {
             if (lang.path().extension() == ".json") {
                 langs.push_back(lang.path().stem().string());
             }
@@ -393,7 +392,7 @@ static auto const SetLanguage = [](CommandOrigin const& ori, CommandOutput& out)
 
         auto lang = std::get<std::string>(res->at("lang"));
 
-        auto  uuid     = pl.getUuid().asString();
+        auto& uuid     = pl.getUuid();
         auto& db       = *PLand::getInstance().getLandRegistry();
         auto  settings = db.getPlayerSettings(uuid);
         if (!settings) {
@@ -417,8 +416,8 @@ static auto const This = [](CommandOrigin const& ori, CommandOutput& out) {
         return;
     }
 
-    auto uuidStr = player.getUuid().asString();
-    if (!land->isOwner(uuidStr) && !PLand::getInstance().getLandRegistry()->isOperator(uuidStr)) {
+    auto& uuid = player.getUuid();
+    if (!land->isOwner(uuid) && !PLand::getInstance().getLandRegistry()->isOperator(uuid)) {
         mc_utils::sendText<mc_utils::LogLevel::Info>(player, "当前位置不是你的领地"_trf(player));
         return;
     }
@@ -504,7 +503,7 @@ bool LandCommand::setup() {
         }
 
         auto& logger = land::PLand::getInstance().getSelf().getLogger();
-        land::PLand::getInstance().getSelectorManager()->forEach([&logger](UUIDm const& uuid, ISelector* selector) {
+        land::PLand::getInstance().getSelectorManager()->forEach([&logger](mce::UUID const& uuid, ISelector* selector) {
             logger.debug("Selector: {} - {}", uuid.asString(), selector->dumpDebugInfo());
             return true;
         });

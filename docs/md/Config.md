@@ -33,6 +33,8 @@
     // BedrockServerClientInterfaceMod: 外部模组使用自定义粒子材质包 (性能较好, 但需要安装 BedrockServerClientInterface 模组和配套材质包)
     // MinecraftDebugShape: 基于 Minecraft 内置的 DebugShape (性能好, 无外部依赖, Minecraft 原生功能)
     // 默认情况下使用 MinecraftDebugShape 作为后端，因为其性能较好且无外部依赖 (如果您有更好的方案, 请提交 Issue 或 Pull Request)
+    // v0.13.0+ (不含):
+    // MinecraftDebugShape 从 PLand 剥离独立为一个通用 DebugShape Mod，使用 MinecraftDebugShape 需要安装 DebugShape.dll Mod
     "drawHandleBackend": "MinecraftDebugShape",
 
     "subLand": {
@@ -136,9 +138,14 @@
     "PlayerInteractEntityBeforeEvent": true, // 玩家交互实体
     "BlockFallBeforeEvent": true, // 方块下落
     "ActorDestroyBlockEvent": true, // 实体破坏方块
-    "EndermanLeaveBlockEvent": true, // 末影人放下方块
-    "EndermanTakeBlockEvent": true, // 末影人拿走方块
+    "MobPlaceBlockBeforeEvent": true, // 末影人放下方块
+    "MobTakeBlockBeforeEvent": true, // 末影人拿走方块
     "DragonEggBlockTeleportBeforeEvent": true // 龙蛋传送
+  },
+  "hooks":{
+    "registerMobHurtHook": true,// 注册生物受伤Hook
+    "registerFishingHookHitHook": true,// 注册钓鱼竿Hook
+    "registerLayEggGoalHook": true //注册海龟产卵Hook
   },
   "protection": {
     "mob": {

@@ -18,7 +18,7 @@ struct ForbiddenRange {
 };
 
 struct Config {
-    int              version{24};
+    int              version{27};
     ll::io::LogLevel logLevel{ll::io::LogLevel::Info};
 
     EconomyConfig economy;
@@ -37,12 +37,12 @@ struct Config {
         DrawHandleBackend drawHandleBackend{DrawHandleBackend::MinecraftDebugShape}; // 领地绘制后端
 
         struct {
-            bool   enabled{false};                              // 是否启用
-            int    maxNested{5};                                // 最大嵌套层数(默认5，最大16)
-            int    minSpacing{8};                               // 子领地之间的最小间距
-            int    minSpacingIncludeY{true};                    // 子领地之间的最小间距是否包含Y轴
-            int    maxSubLand{6};                               // 每个领地的最大子领地数量
-            string calculate{"(square * 8 + height * 20) * 0"}; // 价格公式
+            bool        enabled{false};                              // 是否启用
+            int         maxNested{5};                                // 最大嵌套层数(默认5，最大16)
+            int         minSpacing{8};                               // 子领地之间的最小间距
+            int         minSpacingIncludeY{true};                    // 子领地之间的最小间距是否包含Y轴
+            int         maxSubLand{6};                               // 每个领地的最大子领地数量
+            std::string calculate{"(square * 8 + height * 20) * 0"}; // 价格公式
         } subLand;
 
         struct {
@@ -54,13 +54,13 @@ struct Config {
         // 购买配置
         struct {
             struct {
-                bool   enabled{true};
-                string calculate{"square * 8 + height * 20"}; // 计算公式
+                bool        enabled{true};
+                std::string calculate{"square * 8 + height * 20"}; // 计算公式
             } threeDimensionl;
 
             struct {
-                bool   enabled{true};
-                string calculate{"square * 25"}; // 计算公式
+                bool        enabled{true};
+                std::string calculate{"square * 25"}; // 计算公式
             } twoDimensionl;
 
             struct {
@@ -69,14 +69,14 @@ struct Config {
                 int minHeight{1}; // 最小领地高度
             } squareRange;
 
-            std::vector<LandDimid>        allowDimensions{0, 1, 2};   // 允许的领地维度
-            std::vector<ForbiddenRange>   forbiddenRanges;            // 禁止创建领地的区域
+            std::vector<LandDimid>      allowDimensions{0, 1, 2}; // 允许的领地维度
+            std::vector<ForbiddenRange> forbiddenRanges;          // 禁止创建领地的区域
             std::map<std::string, double> dimensionPriceCoefficients; // 维度价格系数，例如维度id的1 是1.2倍 2是1.5倍
         } bought;
     } land;
 
     struct {
-        string      tool{"minecraft:stick"}; // 工具
+        std::string tool{"minecraft:stick"}; // 工具
         std::string alias{"木棍"};           // 别名
     } selector;
 
@@ -93,6 +93,7 @@ struct Config {
         bool ActorRideBeforeEvent{true};                      // 实体骑乘
         bool ExplosionBeforeEvent{true};                      // 爆炸
         bool FarmDecayBeforeEvent{true};                      // 农田退化
+        bool ActorHurtEvent{true};                            // 实体受伤
         bool MobHurtEffectBeforeEvent{true};                  // 生物受伤效果
         bool PistonPushBeforeEvent{true};                     // 活塞推动
         bool PlayerOperatedItemFrameBeforeEvent{true};        // 玩家操作物品展示框
@@ -110,47 +111,52 @@ struct Config {
         bool PlayerInteractEntityBeforeEvent{true};           // 玩家交互实体
         bool BlockFallBeforeEvent{true};                      // 方块下落
         bool ActorDestroyBlockEvent{true};                    // 实体破坏方块
-        bool EndermanLeaveBlockEvent{true};                   // 末影人放下方块
-        bool EndermanTakeBlockEvent{true};                    // 末影人拿走方块
+        bool MobPlaceBlockBeforeEvent{true};                  // 末影人放下方块
+        bool MobTakeBlockBeforeEvent{true};                   // 末影人拿走方块
         bool DragonEggBlockTeleportBeforeEvent{true};         // 龙蛋传送
+        bool PlayerUseItemEvent{true};                        // 玩家使用物品
     } listeners;
+    struct {
+        bool registerMobHurtHook{true};        // 注册生物受伤Hook
+        bool registerFishingHookHitHook{true}; // 注册钓鱼竿Hook
+        bool registerLayEggGoalHook{true};     // 注册产卵AI目标Hook
+    } hooks;
 
     struct {
         struct {
-            std::unordered_set<std::string> hostileMobTypeNames{
-                // 敌对生物
-                "minecraft:zombie",
-                "minecraft:skeleton",
-                "minecraft:creeper",
-                "minecraft:spider",
-                "minecraft:enderman",
-                "minecraft:witch",
-                "minecraft:blaze",
-                "minecraft:ghast",
-                "minecraft:magma_cube",
-                "minecraft:silverfish",
-                "minecraft:slime",
-                "minecraft:guardian",
-                "minecraft:elder_guardian",
-                "minecraft:wither_skeleton",
-                "minecraft:stray",
-                "minecraft:husk",
-                "minecraft:zombie_villager",
-                "minecraft:drowned",
-                "minecraft:phantom",
-                "minecraft:pillager",
-                "minecraft:vindicator",
-                "minecraft:ravager",
-                "minecraft:evocation_illager",
-                "minecraft:vex",
-                "minecraft:shulker",
-                "minecraft:endermite",
-                "minecraft:cave_spider",
-                "minecraft:zoglin",
-                "minecraft:piglin_brute",
-                "minecraft:hoglin",
-                "minecraft:wither",
-                "minecraft:ender_dragon"
+            std::unordered_set<std::string> hostileMobTypeNames{// 敌对生物
+                                                                "minecraft:zombie",
+                                                                "minecraft:skeleton",
+                                                                "minecraft:creeper",
+                                                                "minecraft:spider",
+                                                                "minecraft:enderman",
+                                                                "minecraft:witch",
+                                                                "minecraft:blaze",
+                                                                "minecraft:ghast",
+                                                                "minecraft:magma_cube",
+                                                                "minecraft:silverfish",
+                                                                "minecraft:slime",
+                                                                "minecraft:guardian",
+                                                                "minecraft:elder_guardian",
+                                                                "minecraft:wither_skeleton",
+                                                                "minecraft:stray",
+                                                                "minecraft:husk",
+                                                                "minecraft:zombie_villager",
+                                                                "minecraft:drowned",
+                                                                "minecraft:phantom",
+                                                                "minecraft:pillager",
+                                                                "minecraft:vindicator",
+                                                                "minecraft:ravager",
+                                                                "minecraft:evocation_illager",
+                                                                "minecraft:vex",
+                                                                "minecraft:shulker",
+                                                                "minecraft:endermite",
+                                                                "minecraft:cave_spider",
+                                                                "minecraft:zoglin",
+                                                                "minecraft:piglin_brute",
+                                                                "minecraft:hoglin",
+                                                                "minecraft:wither",
+                                                                "minecraft:ender_dragon"
             };
             std::unordered_set<std::string> specialMobTypeNames{
                 // 特殊生物
@@ -164,22 +170,21 @@ struct Config {
                 "minecraft:boat",
                 "minecraft:ender_crystal",
             };
-            std::unordered_set<std::string> passiveMobTypeNames{
-                // 友好生物
-                "minecraft:cow",
-                "minecraft:pig",
-                "minecraft:sheep",
-                "minecraft:chicken",
-                "minecraft:rabbit",
-                "minecraft:mooshroom",
-                "minecraft:horse",
-                "minecraft:donkey",
-                "minecraft:mule",
-                "minecraft:ocelot",
-                "minecraft:bat",
-                "minecraft:sniffer",
-                "minecraft:camel",
-                "minecraft:armadillo"
+            std::unordered_set<std::string> passiveMobTypeNames{// 友好生物
+                                                                "minecraft:cow",
+                                                                "minecraft:pig",
+                                                                "minecraft:sheep",
+                                                                "minecraft:chicken",
+                                                                "minecraft:rabbit",
+                                                                "minecraft:mooshroom",
+                                                                "minecraft:horse",
+                                                                "minecraft:donkey",
+                                                                "minecraft:mule",
+                                                                "minecraft:ocelot",
+                                                                "minecraft:bat",
+                                                                "minecraft:sniffer",
+                                                                "minecraft:camel",
+                                                                "minecraft:armadillo"
             };
             std::unordered_set<std::string> customSpecialMobTypeNames; // Addon生物类型名称
         } mob;

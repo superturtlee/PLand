@@ -1,15 +1,19 @@
-#include "pland/infra/DataConverter.h"
-#include "fmt/ostream.h"
 #include "ll/api/service/PlayerInfo.h"
+
 #include "pland/PLand.h"
 #include "pland/aabb/LandAABB.h"
+#include "pland/infra/DataConverter.h"
 #include "pland/land/Land.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/utils/JSON.h"
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdio>
+#include <filesystem>
 #include <fstream>
+
+#include "fmt/ostream.h"
 
 
 namespace land {
@@ -17,8 +21,8 @@ namespace land {
 
 DataConverter::DataConverter(bool clearDb) : mClearDb(clearDb) {}
 
-std::unique_ptr<nlohmann::json> DataConverter::loadJson(fs::path const& file) const {
-    if (!fs::exists(file)) {
+std::unique_ptr<nlohmann::json> DataConverter::loadJson(std::filesystem::path const& file) const {
+    if (!std::filesystem::exists(file)) {
         throw std::runtime_error("File does not exist: " + file.string());
     }
     if (file.extension() != ".json") {
@@ -110,12 +114,12 @@ void DataConverter::printProgress(size_t progress, size_t total, fmt::format_str
 
 
 // iLandConverter
-iLandConverter::iLandConverter(const string& relationShipPath, const string& dataPath, bool clear_db)
+iLandConverter::iLandConverter(const std::string& relationShipPath, const std::string& dataPath, bool clear_db)
 : DataConverter{clear_db},
   mRelationShipPath{relationShipPath},
   mDataPath{dataPath} {}
 
-SharedLand iLandConverter::convert(RawData::iLand const& raw, string const& xuid, std::optional<UUIDs> uuids) {
+SharedLand iLandConverter::convert(RawData::iLand const& raw, std::string const& xuid, std::optional<mce::UUID> uuids) {
     auto ctx = LandContext{};
     // pos
     {
@@ -132,7 +136,7 @@ SharedLand iLandConverter::convert(RawData::iLand const& raw, string const& xuid
     {
         ctx.mIsConvertedLand = true;
         ctx.mOwnerDataIsXUID = !uuids.has_value();
-        ctx.mLandOwner       = uuids.value_or(xuid);
+        ctx.mLandOwner       = uuids.has_value() ? uuids->asString() : xuid;
         // ctx.mLandMembers = raw.settings.share; // TODO
         ctx.mLandName     = raw.settings.nickname;
         ctx.mLandDescribe = raw.settings.describe;
@@ -166,38 +170,38 @@ SharedLand iLandConverter::convert(RawData::iLand const& raw, string const& xuid
         tab.useDaylightDetector = p.use_daylight_detector;
         tab.allowPlayerDamage   = p.allow_attack_player;
         // tab.allowDestroy        = p.allow_entity_destroy; // allow_destroy
-        tab.useLectern          = p.use_lectern;
-        tab.useEnchantingTable  = p.use_enchanting_table;
-        tab.useFishingHook      = p.use_fishing_hook;
-        tab.useAnvil            = p.use_anvil;
-        tab.useLever            = p.use_lever;
-        tab.useButton           = p.use_button;
-        tab.allowMonsterDamage  = p.allow_attack_mobs;
-        tab.useComposter        = p.use_composter;
-        tab.allowRideEntity     = p.allow_ride_entity;
-        tab.useSmithingTable    = p.use_smithing_table;
-        tab.useNoteBlock        = p.use_noteblock;
-        tab.useGrindstone       = p.use_grindstone;
-        tab.useBucket           = p.use_bucket;
-        tab.allowDestroy        = p.allow_destroy;
-        tab.useHopper           = p.use_hopper;
-        tab.useSmoker           = p.use_smoker;
-        tab.useRespawnAnchor    = p.use_respawn_anchor;
-        tab.useJukebox          = p.use_jukebox;
-        tab.useShulkerBox       = p.use_shulker_box;
-        tab.allowOpenChest      = p.allow_open_chest;
-        tab.useBed              = p.use_bed;
-        tab.useItemFrame        = p.use_item_frame;
-        tab.useBrewingStand     = p.use_brewing_stand;
-        tab.useLoom             = p.use_loom;
-        tab.useTrapdoor         = p.use_trapdoor;
-        tab.useCraftingTable    = p.use_crafting_table;
-        tab.useArmorStand       = p.use_armor_stand;
-        tab.allowRideTrans      = p.allow_ride_trans;
-        tab.useDropper          = p.use_dropper;
-        tab.useCauldron         = p.use_cauldron;
-        tab.useCartographyTable = p.use_cartography_table;
-        tab.useBell             = p.use_bell;
+        tab.useLectern             = p.use_lectern;
+        tab.useEnchantingTable     = p.use_enchanting_table;
+        tab.allowFishingRodAndHook = p.use_fishing_hook;
+        tab.useAnvil               = p.use_anvil;
+        tab.useLever               = p.use_lever;
+        tab.useButton              = p.use_button;
+        tab.allowMonsterDamage     = p.allow_attack_mobs;
+        tab.useComposter           = p.use_composter;
+        tab.allowRideEntity        = p.allow_ride_entity;
+        tab.useSmithingTable       = p.use_smithing_table;
+        tab.useNoteBlock           = p.use_noteblock;
+        tab.useGrindstone          = p.use_grindstone;
+        tab.useBucket              = p.use_bucket;
+        tab.allowDestroy           = p.allow_destroy;
+        tab.useHopper              = p.use_hopper;
+        tab.useSmoker              = p.use_smoker;
+        tab.useRespawnAnchor       = p.use_respawn_anchor;
+        tab.useJukebox             = p.use_jukebox;
+        tab.useShulkerBox          = p.use_shulker_box;
+        tab.allowOpenChest         = p.allow_open_chest;
+        tab.useBed                 = p.use_bed;
+        tab.useItemFrame           = p.use_item_frame;
+        tab.useBrewingStand        = p.use_brewing_stand;
+        tab.useLoom                = p.use_loom;
+        tab.useTrapdoor            = p.use_trapdoor;
+        tab.useCraftingTable       = p.use_crafting_table;
+        tab.useArmorStand          = p.use_armor_stand;
+        tab.allowRideTrans         = p.allow_ride_trans;
+        tab.useDropper             = p.use_dropper;
+        tab.useCauldron            = p.use_cauldron;
+        tab.useCartographyTable    = p.use_cartography_table;
+        tab.useBell                = p.use_bell;
     }
 
     return Land::make(std::move(ctx));
@@ -253,7 +257,7 @@ bool iLandConverter::execute() {
 
             // 转换数据
             SharedLand landData;
-            if (info.has_value()) landData = convert(iter->second, xuid, info->uuid.asString());
+            if (info.has_value()) landData = convert(iter->second, xuid, info->uuid);
             else landData = convert(iter->second, xuid, std::nullopt);
             if (!landData) {
                 logger.warn(
