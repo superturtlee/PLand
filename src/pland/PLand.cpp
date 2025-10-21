@@ -4,22 +4,25 @@
 
 #include "ll/api/Versions.h"
 #include "ll/api/data/Version.h"
+#include "ll/api/event/EventBus.h"
+#include "ll/api/event/ListenerBase.h"
 #include "ll/api/i18n/I18n.h"
+#include "ll/api/io/LogLevel.h"
 #include "ll/api/mod/RegisterHelper.h"
+#include "ll/api/thread/ThreadPoolExecutor.h"
 #include "ll/api/utils/SystemUtils.h"
 
-
-#include "ll/api/io/LogLevel.h"
-#include "pland/Global.h"
 #include "pland/Version.h"
 #include "pland/command/Command.h"
 #include "pland/economy/EconomySystem.h"
+#include "pland/events/ConfigReloadEvent.h"
 #include "pland/hooks/EventListener.h"
 #include "pland/infra/Config.h"
 #include "pland/infra/DrawHandleManager.h"
 #include "pland/infra/SafeTeleport.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/land/LandScheduler.h"
+#include "pland/network/telemetry/Telemetry.h"
 #include "pland/selector/SelectorManager.h"
 
 
@@ -33,10 +36,57 @@
 
 namespace land {
 
-PLand& PLand::getInstance() {
-    static PLand instance;
-    return instance;
-}
+
+struct PLand::Impl {
+    ll::mod::NativeMod&                             mSelf;
+    std::unique_ptr<ll::thread::ThreadPoolExecutor> mThreadPoolExecutor{nullptr};
+    std::unique_ptr<LandRegistry>                   mLandRegistry{nullptr};
+    std::unique_ptr<EventListener>                  mEventListener{nullptr};
+    std::unique_ptr<LandScheduler>                  mLandScheduler{nullptr};
+    std::unique_ptr<SafeTeleport>                   mSafeTeleport{nullptr};
+    std::unique_ptr<SelectorManager>                mSelectorManager{nullptr};
+    std::unique_ptr<DrawHandleManager>              mDrawHandleManager{nullptr};
+    ll::event::ListenerPtr                          mConfigReloadListener{nullptr};
+    std::unique_ptr<network::Telemetry>             mTelemetry{nullptr};
+
+#ifdef LD_DEVTOOL
+    std::unique_ptr<devtool::DevToolApp> mDevToolApp{nullptr};
+#endif
+
+public: // API
+    explicit Impl() : mSelf(*ll::mod::NativeMod::current()) {
+        // !! 这里的构造时机很早，请不要在这里初始化任何带有依赖的资源 !!
+    }
+
+    ~Impl() {
+        // !! 务必注意析构顺序 !!
+#ifdef LD_DEVTOOL
+        if (land::Config::cfg.internal.devTools) {
+            this->mDevToolApp.reset();
+        }
+#endif
+        ll::event::EventBus::getInstance().removeListener(this->mConfigReloadListener);
+
+        auto& logger = mSelf.getLogger();
+        this->mTelemetry.reset();
+
+        logger.debug("Saving land registry...");
+        this->mLandRegistry->save();
+
+        logger.debug("Destroying resources...");
+        this->mLandScheduler.reset();
+        this->mEventListener.reset();
+        this->mSafeTeleport.reset();
+        this->mSelectorManager.reset();
+        this->mDrawHandleManager.reset();
+        this->mLandRegistry.reset();
+
+        logger.debug("Destroying thread pool...");
+        this->mThreadPoolExecutor->destroy();
+        this->mThreadPoolExecutor.reset();
+    }
+};
+
 
 bool PLand::load() {
     auto& logger = getSelf().getLogger();
@@ -59,10 +109,13 @@ bool PLand::load() {
     } else {
         logger.info("Version: {}", PLAND_VERSION_STRING);
     }
+
 #ifdef LEVI_LAMINA_VERSION
     logger.info("LeviLamina Version: {}", LEVI_LAMINA_VERSION);
+    auto const  semver    = ll::data::Version{LEVI_LAMINA_VERSION};
     const auto& llVersion = ll::getLoaderVersion();
-    if (llVersion != ll::data::Version(LEVI_LAMINA_VERSION)) {
+    // 仅检查 major 和 minor 版本号
+    if (llVersion.major != semver.major || llVersion.minor != semver.minor) {
         logger.warn(
             "插件所依赖的 LeviLamina 版本 ({}) 与当前运行的版本 ({}) 不匹配。",
             LEVI_LAMINA_VERSION,
@@ -97,7 +150,9 @@ bool PLand::load() {
     land::Config::tryLoad();
     logger.setLevel(land::Config::cfg.logLevel);
 
-    this->mLandRegistry = std::make_unique<land::LandRegistry>();
+    mImpl->mThreadPoolExecutor = std::make_unique<ll::thread::ThreadPoolExecutor>("PLand-ThreadPool", 2);
+
+    mImpl->mLandRegistry = std::make_unique<land::LandRegistry>();
     land::EconomySystem::getInstance().initEconomySystem();
 
 #ifdef DEBUG
@@ -110,77 +165,64 @@ bool PLand::load() {
 
 bool PLand::enable() {
     land::LandCommand::setup();
-    this->mLandScheduler     = std::make_unique<land::LandScheduler>();
-    this->mEventListener     = std::make_unique<land::EventListener>();
-    this->mSafeTeleport      = std::make_unique<land::SafeTeleport>();
-    this->mSelectorManager   = std::make_unique<land::SelectorManager>();
-    this->mDrawHandleManager = std::make_unique<land::DrawHandleManager>();
+    mImpl->mLandScheduler     = std::make_unique<land::LandScheduler>();
+    mImpl->mEventListener     = std::make_unique<land::EventListener>();
+    mImpl->mSafeTeleport      = std::make_unique<land::SafeTeleport>();
+    mImpl->mSelectorManager   = std::make_unique<land::SelectorManager>();
+    mImpl->mDrawHandleManager = std::make_unique<land::DrawHandleManager>();
+    mImpl->mTelemetry         = std::make_unique<network::Telemetry>(this);
+
+    mImpl->mConfigReloadListener = ll::event::EventBus::getInstance().emplaceListener<events::ConfigReloadEvent>(
+        [this](events::ConfigReloadEvent& ev [[maybe_unused]]) {
+            mImpl->mEventListener.reset();
+            mImpl->mEventListener = std::make_unique<land::EventListener>();
+
+            EconomySystem::getInstance().reloadEconomySystem();
+
+            mImpl->mTelemetry.reset();
+            mImpl->mTelemetry = std::make_unique<network::Telemetry>(this);
+        }
+    );
+
 
 #ifdef LD_TEST
     test::TestMain::setup();
 #endif
 
 #ifdef LD_DEVTOOL
-    if (land::Config::cfg.internal.devTools) mDevToolApp = devtool::DevToolApp::make();
+    if (land::Config::cfg.internal.devTools) {
+        mImpl->mDevToolApp = devtool::DevToolApp::make();
+    }
 #endif
 
     return true;
 }
 
 bool PLand::disable() {
-#ifdef LD_DEVTOOL
-    if (land::Config::cfg.internal.devTools && mDevToolApp) mDevToolApp.reset();
-#endif
-
-    auto& logger = getSelf().getLogger();
-
-    logger.trace("[Main thread] Saving land registry data...");
-    mLandRegistry->save();
-    logger.trace("[Main thread] Land registry data saved.");
-
-    logger.trace("Destroying resources...");
-    mLandScheduler.reset();
-    mEventListener.reset();
-    mSafeTeleport.reset();
-    mSelectorManager.reset();
-    mLandRegistry.reset();
-    mDrawHandleManager.reset();
-
+    mImpl.reset();
     return true;
 }
 
 bool PLand::unload() { return true; }
 
-void PLand::onConfigReload() {
-    auto& logger = getSelf().getLogger();
-    logger.trace("Reloading event listener...");
-    try {
-        mEventListener.reset();
-        logger.trace("Event listener reset, creating new instance...");
-        mEventListener = std::make_unique<land::EventListener>();
-        logger.trace("Event listener reloaded successfully.");
-
-        logger.trace("Reloading economy system...");
-        land::EconomySystem::getInstance().reloadEconomySystem();
-        logger.trace("Economy system reloaded successfully.");
-    } catch (std::exception const& e) {
-        getSelf().getLogger().error("Failed to reload event listener: {}", e.what());
-    } catch (...) {
-        getSelf().getLogger().error("Failed to reload event listener: unknown error");
-    }
+PLand& PLand::getInstance() {
+    static PLand instance;
+    return instance;
 }
 
-PLand::PLand() : mSelf(*ll::mod::NativeMod::current()) {}
-ll::mod::NativeMod& PLand::getSelf() const { return mSelf; }
-SafeTeleport*       PLand::getSafeTeleport() const { return mSafeTeleport.get(); }
-LandScheduler*      PLand::getLandScheduler() const { return mLandScheduler.get(); }
-SelectorManager*    PLand::getSelectorManager() const { return mSelectorManager.get(); }
-LandRegistry*       PLand::getLandRegistry() const { return mLandRegistry.get(); }
-DrawHandleManager*  PLand::getDrawHandleManager() const { return mDrawHandleManager.get(); }
+PLand::PLand() : mImpl(std::make_unique<Impl>()) {}
 
+ll::mod::NativeMod& PLand::getSelf() const { return mImpl->mSelf; }
+SafeTeleport*       PLand::getSafeTeleport() const { return mImpl->mSafeTeleport.get(); }
+LandScheduler*      PLand::getLandScheduler() const { return mImpl->mLandScheduler.get(); }
+SelectorManager*    PLand::getSelectorManager() const { return mImpl->mSelectorManager.get(); }
+LandRegistry*       PLand::getLandRegistry() const { return mImpl->mLandRegistry.get(); }
+DrawHandleManager*  PLand::getDrawHandleManager() const { return mImpl->mDrawHandleManager.get(); }
+
+ll::thread::ThreadPoolExecutor* PLand::getThreadPool() const { return mImpl->mThreadPoolExecutor.get(); }
 
 #ifdef LD_DEVTOOL
-devtool::DevToolApp* PLand::getDevToolApp() const { return mDevToolApp.get(); }
+devtool::DevToolApp* PLand::getDevToolApp() const { return mImpl->mDevToolApp.get(); }
 #endif
 
 

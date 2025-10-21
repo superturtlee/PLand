@@ -6,28 +6,30 @@ add_repositories("miracleforest-repo https://github.com/MiracleForest/xmake-repo
 
 
 -- LeviMc(LiteLDev)
-local levilamina_version = "1.5.2"
+local levilamina_version = "1.6.1"
 add_requires("levilamina " .. levilamina_version, {configs = {target_type = "server"}})
 add_requires("levibuildscript")
 
 -- MiracleForest
-local ilistenattentively_version = "0.8.0"
+local ilistenattentively_version = "0.9.0"
 add_requires("ilistenattentively " .. ilistenattentively_version)
 
 -- xmake
 add_requires("exprtk 0.0.3")
+add_requires("cpr[ssl=y] 1.12.0") -- 遥测
 
 if has_config("devtool") then
     add_requires("imgui v1.91.6-docking", {configs = { opengl3 = true, glfw = true }})
     add_requires("glew 2.2.0")
 end
 
+
 if not has_config("vs_runtime") then
     set_runtimes("MD")
 end
 
 
-option("test")
+option("test") -- 测试
     set_default(false)
     set_showmenu(true)
 option_end()
@@ -36,6 +38,7 @@ option("devtool") -- 开发工具
     set_default(true)
     set_showmenu(true)
 option_end()
+
 
 rule("gen_version")
     before_build(function(target)
@@ -48,6 +51,10 @@ target("PLand") -- Change this to your mod name.
     add_rules("@levibuildscript/linkrule")
     add_rules("@levibuildscript/modpacker")
     add_rules("plugin.compile_commands.autoupdate")
+    set_exceptions("none") -- To avoid conflicts with /EHa.
+    set_kind("shared")
+    set_languages("c++20")
+    set_symbols("debug")
     add_cxflags(
         "/EHa",
         "/utf-8",
@@ -59,29 +66,36 @@ target("PLand") -- Change this to your mod name.
         "/w44738",
         "/w45204"
     )
-    add_defines("NOMINMAX", "UNICODE", "LDAPI_EXPORT", "_HAS_CXX23=1")
-    add_files("src/**.cpp", "src/**.cc")
+    add_defines(
+        "NOMINMAX",
+        "UNICODE",
+        "LDAPI_EXPORT",
+        "_HAS_CXX23=1"
+    )
     add_includedirs("src")
+    add_files("src/**.cpp", "src/**.cc")
     add_headerfiles("src/(pland/**.h)")
+
     add_packages(
         "levilamina",
         "exprtk",
-        "ilistenattentively"
+        "ilistenattentively",
+        "cpr"
     )
+
     add_defines("LEVI_LAMINA_VERSION=\"" .. levilamina_version .. "\"")
     add_defines("ILISTENATTENTIVELY_VERSION=\"" .. ilistenattentively_version .. "\"")
-
-    set_exceptions("none") -- To avoid conflicts with /EHa.
-    set_kind("shared")
-    set_languages("c++20")
-    set_symbols("debug")
 
     add_defines("PLUGIN_NAME=\"[PLand] \"")
 
     if is_mode("debug") then
         add_defines("DEBUG")
         -- add_defines("PLAND_I18N_COLLECT_STRINGS", "LL_I18N_COLLECT_STRINGS", "LL_I18N_COLLECT_STRINGS_CUSTOM")
-    end 
+    end
+
+    if is_plat("windows") then
+        add_files("resource/Resource.rc")
+    end
 
     if has_config("test") then
         add_defines("LD_TEST")
@@ -94,13 +108,9 @@ target("PLand") -- Change this to your mod name.
             "imgui",
             "glew"
         )
-        add_includedirs("devtool", "devtool/deps")
-        add_files("devtool/**.cc", "devtool/**.cpp")
+        add_includedirs("src-devtool", "src-devtool/deps")
+        add_files("src-devtool/**.cc", "src-devtool/**.cpp")
         add_defines("LD_DEVTOOL")
-    end
-
-    if is_plat("windows") then
-        add_files("resource/Resource.rc")
     end
 
     after_build(function (target)
