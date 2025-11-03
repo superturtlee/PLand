@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🐛 问题修复
+
+- [#156] 修复新创建的领地未正常持久化保存 @engsr6982
+
 ## [0.15.0] - 2025-10-21
 
 ### ✨ 新增功能
