@@ -64,20 +64,23 @@ LL_TYPE_INSTANCE_HOOK(
     auto* db   = PLand::getInstance().getLandRegistry();
     auto  land = db->getLandAt(pos, dimId);
 
+    auto* player = hookActor.getPlayerOwner();
+    if (!player) {
+        origin(inEntity, inSpeed);
+        return;
+    }
+
     // 如果在领地内
     if (land) {
-        // 检查 inEntity 是否为玩家
-        if (inEntity.isPlayer()) {
-            auto& player = static_cast<Player&>(inEntity);
-            if (!PreCheckLandExistsAndPermission(land, player.getUuid())) {
-                // 领地不存在或玩家没有权限，则拦截
-                return;
-            }
-            // 检查钓鱼竿权限
-            if (!land->getPermTable().allowFishingRodAndHook) {
-                // 如果不允许使用钓鱼竿，则拦截
-                return;
-            }
+        // 检查玩家是否有权限
+        if (!PreCheckLandExistsAndPermission(land, player->getUuid())) {
+            // 领地不存在或玩家没有权限，则拦截
+            return;
+        }
+        // 检查钓鱼竿权限
+        if (!land->getPermTable().allowFishingRodAndHook) {
+            // 如果不允许使用钓鱼竿，则拦截
+            return;
         }
     }
     origin(inEntity, inSpeed);
