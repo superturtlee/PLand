@@ -129,6 +129,7 @@ LL_TYPE_INSTANCE_HOOK(
     if (land && !land->getPermTable().allowFireSpread) {
         return;
     }
+    origin(region, pos, chance, randomize, age, firePos);
 }
 
 
