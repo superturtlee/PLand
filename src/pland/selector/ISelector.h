@@ -3,8 +3,7 @@
 #include "mc/network/packet/SetTitlePacket.h"
 #include "mc/world/level/BlockPos.h"
 #include "pland/Global.h"
-#include "pland/infra/DrawHandleManager.h"
-#include "pland/infra/draw/IDrawHandle.h"
+#include "pland/drawer/DrawHandleManager.h"
 
 
 class Player;
@@ -21,7 +20,7 @@ class ISelector {
     bool                    m3D = false;
     std::optional<BlockPos> mPointA{std::nullopt};
     std::optional<BlockPos> mPointB{std::nullopt};
-    GeoId                   mDrawedRange{};
+    drawer::GeoId           mDrawedRange{};
     SetTitlePacket          mTitlePacket{SetTitlePacket::TitleType::Title};
     SetTitlePacket          mSubTitlePacket{SetTitlePacket::TitleType::Subtitle};
 

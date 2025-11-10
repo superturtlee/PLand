@@ -8,8 +8,7 @@
 
 #include "pland/Global.h"
 #include "pland/PLand.h"
-#include "pland/infra/DrawHandleManager.h"
-#include "pland/infra/draw/IDrawHandle.h"
+#include "pland/drawer/DrawHandleManager.h"
 #include "pland/land/Land.h"
 #include "pland/land/LandContext.h"
 #include "pland/land/LandRegistry.h"

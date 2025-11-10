@@ -8,7 +8,7 @@ class Land;
 
 class SubLandSelector final : public ISelector {
     std::weak_ptr<Land> mParentLand;
-    GeoId               mParentRangeDrawId;
+    drawer::GeoId               mParentRangeDrawId;
 
 public:
     LDAPI explicit SubLandSelector(Player& player, std::shared_ptr<Land> parent);

@@ -5,10 +5,9 @@
 #include "pland/Global.h"
 #include "pland/PLand.h"
 #include "pland/aabb/LandAABB.h"
+#include "pland/drawer/DrawHandleManager.h"
 #include "pland/gui/NewLandGUI.h"
 #include "pland/infra/Config.h"
-#include "pland/infra/DrawHandleManager.h"
-#include "pland/infra/draw/IDrawHandle.h"
 #include "pland/utils/McUtils.h"
 
 

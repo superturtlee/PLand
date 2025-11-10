@@ -1,5 +1,5 @@
 #pragma once
-#include "DrawHandleType.h"
+#include "pland/drawer/DrawerType.h"
 #include "ll/api/io/LogLevel.h"
 #include "pland/Global.h"
 #include "pland/aabb/LandAABB.h"
@@ -34,7 +34,7 @@ struct Config {
         bool setupDrawCommand{false}; // 注册领地绘制命令
         int  drawRange{64};           // 绘制 x 范围内的领地
 
-        DrawHandleBackend drawHandleBackend{DrawHandleBackend::MinecraftDebugShape}; // 领地绘制后端
+        DrawerType drawHandleBackend{DrawerType::DebugShape}; // 领地绘制后端
 
         struct {
             bool        enabled{false};                              // 是否启用

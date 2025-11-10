@@ -8,7 +8,7 @@ class Land;
 
 class ChangeLandRangeSelector final : public ISelector {
     std::weak_ptr<Land> mLand;           // 领地
-    GeoId               mOldRangeDrawId; // 旧领地范围
+    drawer::GeoId       mOldRangeDrawId; // 旧领地范围
 
 public:
     LDAPI explicit ChangeLandRangeSelector(Player& player, std::shared_ptr<Land> land);

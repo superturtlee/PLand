@@ -1,9 +1,7 @@
-#include "BsciDrawHandle.h"
+#include "BSCIHandle.h"
 #include "mc/_HeaderOutputPredefine.h"
 #include "mc/world/phys/AABB.h"
 #include "pland/aabb/LandAABB.h"
-#include "pland/infra/draw/IDrawHandle.h"
-#include "pland/infra/draw/impl/BSCIDrawHandle.h"
 #include "pland/land/Land.h"
 #include <mc/deps/core/utility/AutomaticID.h>
 
@@ -13,7 +11,7 @@
 namespace bsci {
 class GeometryGroup {
 public:
-    using GeoId = ::land::GeoId;
+    using GeoId = ::land::drawer::GeoId;
 
 protected:
     // vIndex: - 
@@ -113,13 +111,13 @@ public:
 // clang-format on
 
 
-namespace land {
+namespace land::drawer::detail {
 
 
 using CreateGeometryGroupFn            = std::unique_ptr<bsci::GeometryGroup> (*)();
 static const wchar_t* BSCI_MODULE_NAME = L"BedrockServerClientInterface.dll";
 
-class BsciDrawHandle::Impl {
+class BSCIHandle::Impl {
 public:
     static bool isBsciModuleLoadedImpl() { return GetModuleHandle(BSCI_MODULE_NAME) != nullptr; }
 
@@ -157,26 +155,26 @@ public:
 };
 
 
-BsciDrawHandle::BsciDrawHandle() : impl(std::make_unique<Impl>()) {}
+BSCIHandle::BSCIHandle() : impl(std::make_unique<Impl>()) {}
 
-BsciDrawHandle::~BsciDrawHandle() = default;
+BSCIHandle::~BSCIHandle() = default;
 
-GeoId BsciDrawHandle::draw(LandAABB const& aabb, DimensionType dimId, mce::Color const& color) {
+GeoId BSCIHandle::draw(LandAABB const& aabb, DimensionType dimId, mce::Color const& color) {
     return impl->mGeometryGroup->box(dimId, fixAABB(aabb), color);
 }
 
-void BsciDrawHandle::draw(std::shared_ptr<Land> const& land, mce::Color const& color) {
+void BSCIHandle::draw(std::shared_ptr<Land> const& land, mce::Color const& color) {
     auto id = draw(land->getAABB(), land->getDimensionId(), color);
     impl->mLandGeoMap.emplace(land->getId(), id);
 }
 
-void BsciDrawHandle::remove(GeoId id) {
+void BSCIHandle::remove(GeoId id) {
     if (id) {
         impl->mGeometryGroup->remove(id);
     }
 }
 
-void BsciDrawHandle::remove(LandID landId) {
+void BSCIHandle::remove(LandID landId) {
     auto iter = impl->mLandGeoMap.find(landId);
     if (iter != impl->mLandGeoMap.end()) {
         remove(iter->second);
@@ -184,26 +182,26 @@ void BsciDrawHandle::remove(LandID landId) {
     }
 }
 
-void BsciDrawHandle::remove(std::shared_ptr<Land> land) { remove(land->getId()); }
+void BSCIHandle::remove(std::shared_ptr<Land> land) { remove(land->getId()); }
 
-void BsciDrawHandle::clear() { impl->reset(); }
+void BSCIHandle::clear() { impl->reset(); }
 
-void BsciDrawHandle::clearLand() {
+void BSCIHandle::clearLand() {
     for (auto& [id, geoId] : impl->mLandGeoMap) {
         impl->mGeometryGroup->remove(geoId);
     }
     impl->mLandGeoMap.clear();
 }
 
-bool BsciDrawHandle::isBsciModuleLoaded() { return Impl::isBsciModuleLoadedImpl(); }
+bool BSCIHandle::isBsciModuleLoaded() { return Impl::isBsciModuleLoadedImpl(); }
 
-AABB BsciDrawHandle::fixAABB(LandPos const& min, LandPos const& max) {
+AABB BSCIHandle::fixAABB(LandPos const& min, LandPos const& max) {
     return AABB{
         Vec3{min.x + 0.08, min.y + 0.08, min.z + 0.08},
         Vec3{max.x + 0.98, max.y + 0.98, max.z + 0.98}
     };
 }
-AABB BsciDrawHandle::fixAABB(LandAABB const& aabb) { return fixAABB(aabb.min, aabb.max); }
+AABB BSCIHandle::fixAABB(LandAABB const& aabb) { return fixAABB(aabb.min, aabb.max); }
 
 
-} // namespace land
+} // namespace land::drawer::detail

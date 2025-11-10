@@ -1,18 +1,21 @@
-#include "DefaultDrawHandle.h"
+#include "DefaultParticleHandle.h"
+#include "pland/Global.h"
+#include "pland/PLand.h"
+#include "pland/aabb/LandAABB.h"
+#include "pland/land/Land.h"
+
 #include "ll/api/chrono/GameChrono.h"
 #include "ll/api/coro/CoroTask.h"
 #include "ll/api/coro/InterruptableSleep.h"
 #include "ll/api/thread/ServerThreadExecutor.h"
+
 #include "mc/network/packet/SpawnParticleEffectPacket.h"
 #include "mc/util/MolangVariable.h"
 #include "mc/util/MolangVariableMap.h"
 #include "mc/world/level/dimension/VanillaDimensions.h"
-#include "pland/Global.h"
-#include "pland/PLand.h"
-#include "pland/aabb/LandAABB.h"
-#include "pland/infra/draw/IDrawHandle.h"
-#include "pland/land/Land.h"
+
 #include <atomic>
+
 
 // Fix LNK2019: "public: __cdecl MolangVariableMap::MolangVariableMap(class MolangVariableMap const &)"
 MolangVariableMap::MolangVariableMap(MolangVariableMap const& rhs) {
@@ -24,7 +27,7 @@ MolangVariableMap::MolangVariableMap(MolangVariableMap const& rhs) {
     mHasPublicVariables = rhs.mHasPublicVariables;
 }
 
-namespace land {
+namespace land::drawer::detail {
 
 
 class ParticleSpawner {
@@ -74,7 +77,7 @@ public:
     }
 };
 
-class DefaultDrawHandle::Impl {
+class DefaultParticleHandle::Impl {
     std::unordered_map<GeoId, ParticleSpawner>    mSpawners;
     std::unordered_map<LandID, GeoId>             mDrawedLands;
     std::shared_ptr<std::atomic<bool>>            mQuit;
@@ -153,25 +156,25 @@ public:
     }
 };
 
-DefaultDrawHandle::DefaultDrawHandle() : impl(std::make_unique<Impl>()) {}
+DefaultParticleHandle::DefaultParticleHandle() : impl(std::make_unique<Impl>()) {}
 
-DefaultDrawHandle::~DefaultDrawHandle() = default;
+DefaultParticleHandle::~DefaultParticleHandle() = default;
 
-GeoId DefaultDrawHandle::draw(LandAABB const& aabb, DimensionType dimId, mce::Color const&) {
+GeoId DefaultParticleHandle::draw(LandAABB const& aabb, DimensionType dimId, mce::Color const&) {
     return impl->draw(aabb, dimId);
 }
 
-void DefaultDrawHandle::draw(std::shared_ptr<Land> const& land, mce::Color const&) { impl->draw(land); }
+void DefaultParticleHandle::draw(std::shared_ptr<Land> const& land, mce::Color const&) { impl->draw(land); }
 
-void DefaultDrawHandle::remove(GeoId id) { impl->remove(id); }
+void DefaultParticleHandle::remove(GeoId id) { impl->remove(id); }
 
-void DefaultDrawHandle::remove(LandID landId) { impl->remove(landId); }
+void DefaultParticleHandle::remove(LandID landId) { impl->remove(landId); }
 
-void DefaultDrawHandle::remove(std::shared_ptr<Land> land) { impl->remove(land->getId()); }
+void DefaultParticleHandle::remove(std::shared_ptr<Land> land) { impl->remove(land->getId()); }
 
-void DefaultDrawHandle::clear() { impl->clear(); }
+void DefaultParticleHandle::clear() { impl->clear(); }
 
-void DefaultDrawHandle::clearLand() { impl->clearLand(); }
+void DefaultParticleHandle::clearLand() { impl->clearLand(); }
 
 
-} // namespace land
+} // namespace land::drawer::detail

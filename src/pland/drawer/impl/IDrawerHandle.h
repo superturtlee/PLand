@@ -6,28 +6,29 @@
 
 
 namespace land {
-
-
 class LandAABB;
 class Land;
+} // namespace land
+
+namespace land::drawer {
 
 
 struct GeoId {
     uint64 value{0};
 
-    operator bool() const { return value != 0; }
-    bool operator==(GeoId const& other) const { return value == other.value; }
+    constexpr      operator bool() const { return value != 0; }
+    constexpr bool operator==(GeoId const& other) const { return value == other.value; }
 
     GeoId() = default;
     explicit GeoId(uint64 v) : value(v) {}
 };
 
-class IDrawHandle {
+class IDrawerHandle {
 public:
-    LD_DISABLE_COPY_AND_MOVE(IDrawHandle);
+    LD_DISABLE_COPY_AND_MOVE(IDrawerHandle);
 
-    LDAPI explicit IDrawHandle() = default;
-    LDAPI virtual ~IDrawHandle() = default;
+    LDAPI explicit IDrawerHandle() = default;
+    LDAPI virtual ~IDrawerHandle() = default;
 
     virtual GeoId draw(LandAABB const& aabb, DimensionType dimId, mce::Color const& color) = 0;
 
@@ -45,13 +46,13 @@ public:
 };
 
 
-} // namespace land
+} // namespace land::drawer
 
 
 // Fix std::unordered_map<land::GeoId, ...>
 namespace std {
 template <>
-struct hash<land::GeoId> {
-    size_t operator()(land::GeoId const& id) const { return std::hash<uint64>()(id.value); }
+struct hash<land::drawer::GeoId> {
+    constexpr size_t operator()(land::drawer::GeoId const& id) const noexcept { return id.value; }
 };
 } // namespace std
