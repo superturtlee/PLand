@@ -27,7 +27,9 @@ public:
         LDNDAPI Impl* operator->();
 
         template <typename T>
-        LDNDAPI decltype(auto) operator[](T&& key);
+        decltype(auto) operator[](T&& key) {
+            return mImpl[std::forward<T>(key)];
+        }
 
         LDNDAPI static Variable make(LandAABB const& landPos, int dimensionId);
         LDNDAPI static Variable make(int height, int width, int depth, int dimensionId);

@@ -13,13 +13,9 @@ PriceCalculate::Variable::Impl*       PriceCalculate::Variable::operator->() { r
 PriceCalculate::Variable::Impl&       PriceCalculate::Variable::get() { return mImpl; }
 PriceCalculate::Variable::Impl const& PriceCalculate::Variable::get() const { return mImpl; }
 
-template <typename T>
-decltype(auto) PriceCalculate::Variable::operator[](T&& key) {
-    return mImpl[std::forward<T>(key)];
-}
 
 PriceCalculate::Variable PriceCalculate::Variable::make(LandAABB const& landPos, int dimensionId) {
-    PriceCalculate::Variable result;
+    Variable result;
     result["height"]      = landPos.getHeight();
     result["width"]       = landPos.getWidth();
     result["depth"]       = landPos.getDepth();
@@ -30,7 +26,7 @@ PriceCalculate::Variable PriceCalculate::Variable::make(LandAABB const& landPos,
 }
 
 PriceCalculate::Variable PriceCalculate::Variable::make(int height, int width, int depth, int dimensionId) {
-    PriceCalculate::Variable result;
+    Variable result;
     result["height"]      = height;
     result["width"]       = width;
     result["depth"]       = depth;
