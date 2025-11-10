@@ -23,39 +23,28 @@ namespace land {
 #endif
 
 inline constexpr auto DebugShapeModuleName = L"DebugShape.dll";
-inline constexpr auto DebugShapeBoundsBoxCtorSymbol =
-    "??0BoundsBox@extension@debug_shape@@QEAA@AEBVAABB@@AEBVColor@mce@@@Z";
+inline constexpr auto DebugShapeIBoundsBoxFactroySymbol =
+    "?create@IBoundsBox@extension@debug_shape@@SA?AV?$unique_ptr@VIBoundsBox@extension@debug_shape@@U?$default_delete@"
+    "VIBoundsBox@extension@debug_shape@@@std@@@std@@AEBVAABB@@AEBVColor@mce@@@Z";
 
 // MSVC placement new abi
-using DebugShapeBoundsBoxCtor =
-    void (*)(debug_shape::extension::BoundsBox* thiz, AABB const& aabb, mce::Color const& color);
+using DebugShapeIBoundsBoxFactroy =
+    std::unique_ptr<debug_shape::extension::IBoundsBox> (*)(AABB const&, mce::Color const&);
 
 bool isDebugShapeLoaded() { return GetModuleHandle(DebugShapeModuleName) != nullptr; }
 
-struct BoundsBoxDeleter {
-    void operator()(debug_shape::extension::BoundsBox* ptr) {
-        ptr->~BoundsBox();
-        ::operator delete(ptr);
-    }
-};
-
-using UniqueBoundsBox = std::unique_ptr<debug_shape::extension::BoundsBox, BoundsBoxDeleter>;
+using UniqueBoundsBox = std::unique_ptr<debug_shape::extension::IBoundsBox>;
 
 UniqueBoundsBox newBoundsBox(AABB const& aabb, mce::Color const& color = mce::Color::WHITE()) {
     if (!isDebugShapeLoaded()) {
         throw std::runtime_error("DebugShape.dll not loaded");
     }
-    auto raw = GetProcAddress(GetModuleHandle(DebugShapeModuleName), DebugShapeBoundsBoxCtorSymbol);
+    auto raw = GetProcAddress(GetModuleHandle(DebugShapeModuleName), DebugShapeIBoundsBoxFactroySymbol);
     if (!raw) {
         throw std::runtime_error("Failed to get address of DebugShapeBoundsBoxCtor");
     }
-
-    auto ctor = reinterpret_cast<DebugShapeBoundsBoxCtor>(raw);
-
-    void* memory = ::operator new(sizeof(debug_shape::extension::BoundsBox));
-    ctor(reinterpret_cast<debug_shape::extension::BoundsBox*>(memory), aabb, color);
-
-    return UniqueBoundsBox(reinterpret_cast<debug_shape::extension::BoundsBox*>(memory));
+    auto factroy = reinterpret_cast<DebugShapeIBoundsBoxFactroy>(raw);
+    return factroy(aabb, color);
 }
 
 inline AABB toMinecraftAABB(LandPos const& min, LandPos const& max) {

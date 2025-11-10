@@ -43,12 +43,14 @@ SharedLand SubLandSelector::newSubLand() const {
         return nullptr;
     }
 
-    return Land::make(
+    auto land = Land::make(
         *newLandAABB(),
         parent->getDimensionId(), // 子领地必须和父领地在一个维度
         true,                     // 子领地必须是3D
         parent->getOwner()        // 子领地属于父领地，所以父领地的拥有者也是子领地的拥有者
     );
+    land->markDirty();
+    return land;
 }
 
 } // namespace land

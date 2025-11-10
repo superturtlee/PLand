@@ -135,6 +135,11 @@ public:
     LDNDAPI bool isDirty() const;
 
     /**
+     * @brief 标记数据为已修改
+     */
+    LDAPI void markDirty();
+
+    /**
      * @brief 获取领地类型
      */
     LDNDAPI Type getType() const;

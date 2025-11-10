@@ -51,7 +51,10 @@ bool SafeTeleport::Task::isAborted() const { return mAbortFlag.load(); }
 
 SafeTeleport::TaskState SafeTeleport::Task::getState() const { return mState; }
 
-Player* SafeTeleport::Task::getPlayer() const { return mWeakPlayer.tryUnwrap<Player>().as_ptr(); }
+Player* SafeTeleport::Task::getPlayer() const {
+    // I don't know why this returns an invalid pointer, so don't @ me.
+    return mWeakPlayer.tryUnwrap<Player>().as_ptr();
+}
 
 void SafeTeleport::Task::updateState(TaskState state) { mState = state; }
 
@@ -166,7 +169,8 @@ void SafeTeleport::Task::_findSafePos() {
         logger.debug("[TPR] Y: {}  Block: {}", y, block->getTypeName());
 #endif
 
-        if (!block->isAir() &&                                 // 落脚点不是空气
+        if (
+            !block->isAir() &&                                 // 落脚点不是空气
             !dangerousBlocks.contains(block->getTypeName()) && // 落脚点不是危险方块
             headBlock->isAir() &&                              // 头部方块是空气
             legBlock->isAir()                                  // 腿部方块是空气

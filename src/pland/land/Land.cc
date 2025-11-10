@@ -131,6 +131,7 @@ bool Land::isMember(mce::UUID const& uuid) const { return mCacheMembers.contains
 bool Land::isConvertedLand() const { return mContext.mIsConvertedLand; }
 bool Land::isOwnerDataIsXUID() const { return mContext.mOwnerDataIsXUID; }
 bool Land::isDirty() const { return mDirtyCounter.isDirty(); }
+void Land::markDirty() { mDirtyCounter.increment(); }
 
 Land::Type Land::getType() const {
     if (isOrdinaryLand()) [[likely]] {

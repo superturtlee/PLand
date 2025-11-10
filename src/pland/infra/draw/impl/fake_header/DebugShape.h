@@ -1,102 +1,61 @@
 #pragma once
-#include "mc/network/packet/PacketShapeData.h"
-#include "mc/scripting/modules/minecraft/debugdrawer/ScriptDebugShapeType.h"
+#include <mc/_HeaderOutputPredefine.h>
+#include <mc/deps/core/math/Color.h>
+#include <mc/world/phys/AABB.h>
+
+
+class Player;
 
 namespace debug_shape {
 
-using ShapeID         = uint64_t;
-using ShapeDataPacket = ScriptModuleDebugUtilities::PacketShapeData;
-using DebugShapeType  = ScriptModuleDebugUtilities::ScriptDebugShapeType;
 
-class IDrawerInterface {
+class IDrawer {
 public:
-    virtual ~IDrawerInterface()                        = default; // vIndex: 0
-    virtual void draw() const                          = 0;       // vIndex: 1
-    virtual void draw(Player& player) const            = 0;       // vIndex: 2
-    virtual void draw(DimensionType dimension) const   = 0;       // vIndex: 3
-    virtual void remove() const                        = 0;       // vIndex: 4
-    virtual void remove(Player& player) const          = 0;       // vIndex: 5
-    virtual void remove(DimensionType dimension) const = 0;       // vIndex: 6
-    virtual void update() const;                                  // vIndex: 7
-    virtual void update(Player& player) const;                    // vIndex: 8
-    virtual void update(DimensionType dimension) const;           // vIndex: 9
+    virtual ~IDrawer() = default;
+
+    virtual void draw() const                        = 0; // sendToClients (all players)
+    virtual void draw(Player& player) const          = 0; // sendToPlayer (only specific player)
+    virtual void draw(DimensionType dimension) const = 0; // sendToDimension (only specific dimension)
+
+    virtual void remove() const                        = 0;
+    virtual void remove(Player& player) const          = 0;
+    virtual void remove(DimensionType dimension) const = 0;
+
+    virtual void update() const                        = 0;
+    virtual void update(Player& player) const          = 0;
+    virtual void update(DimensionType dimension) const = 0;
 };
 
-class IDebugShape : public IDrawerInterface {
-protected:
-    ShapeDataPacket mShapeData;
-
-public:
-    IDebugShape(const IDebugShape&)            = delete;
-    IDebugShape& operator=(const IDebugShape&) = delete;
-
-    // symbol: ??0IDebugShape@debug_shape@@QEAA@XZ
-    IDebugShape();
-
-    ~IDebugShape() override;                                                       // vIndex: 0
-    virtual ShapeDataPacket const& serialize() const final;                        // vIndex: 1
-    void                           draw() const override;                          // vIndex: 2
-    void                           draw(Player& player) const override;            // vIndex: 3
-    void                           draw(DimensionType dimension) const override;   // vIndex: 4
-    void                           remove() const override;                        // vIndex: 5
-    void                           remove(Player& player) const override;          // vIndex: 6
-    void                           remove(DimensionType dimension) const override; // vIndex: 7
-};
-
-class DebugShape : public IDebugShape {
-public:
-    // symbol: ??0DebugShape@debug_shape@@QEAA@W4ScriptDebugShapeType@ScriptModuleDebugUtilities@@AEBVVec3@@@Z
-    explicit DebugShape(DebugShapeType type, Vec3 const& loc);
-
-    virtual ShapeID                   getId() const final;                      // vIndex: 0
-    virtual DebugShapeType            getType() const final;                    // vIndex: 1
-    virtual std::optional<Vec3>       getPosition() const;                      // vIndex: 2
-    virtual void                      setPosition(Vec3 const& loc);             // vIndex: 3
-    virtual std::optional<Vec3>       getRotation() const;                      // vIndex: 4
-    virtual void                      setRotation(std::optional<Vec3> rot);     // vIndex: 5
-    virtual std::optional<float>      getScale() const;                         // vIndex: 6
-    virtual void                      setScale(std::optional<float> s);         // vIndex: 7
-    virtual std::optional<mce::Color> getColor() const;                         // vIndex: 8
-    virtual void                      setColor(std::optional<mce::Color> c);    // vIndex: 9
-    virtual bool                      hasDuration() const;                      // vIndex: 10
-    virtual std::optional<float>      getTotalTimeLeft() const;                 // vIndex: 11
-    virtual void                      setTotalTimeLeft(std::optional<float> t); // vIndex: 12
-};
-
-class DebugLine : public DebugShape {
-public:
-    // symbol: ??0DebugLine@debug_shape@@QEAA@AEBVVec3@@0@Z
-    explicit DebugLine(Vec3 const& start, Vec3 const& end);
-
-    virtual std::optional<Vec3> getEndPosition() const;                  // vIndex: 0
-    virtual void                setEndPosition(std::optional<Vec3> loc); // vIndex: 1
-};
-
-namespace extension {
-class BoundsBox : public IDrawerInterface {
-    std::array<std::unique_ptr<DebugLine>, 12> mLines{};
-
-public:
-    // symbol: ??1BoundsBox@extension@debug_shape@@UEAA@XZ
-    explicit BoundsBox(AABB const& bounds, mce::Color const& color = mce::Color::WHITE());
-    ~BoundsBox() override;                               // vIndex: 0
-    void draw() const override;                          // vIndex: 1
-    void draw(Player& player) const override;            // vIndex: 2
-    void draw(DimensionType dimension) const override;   // vIndex: 3
-    void remove() const override;                        // vIndex: 4
-    void remove(Player& player) const override;          // vIndex: 5
-    void remove(DimensionType dimension) const override; // vIndex: 6
-
-    // void setBounds(AABB const& bounds);
-
-    virtual std::optional<Vec3>       getRotation() const;                      // vIndex: 7
-    virtual void                      setRotation(std::optional<Vec3> rot);     // vIndex: 8
-    virtual std::optional<mce::Color> getColor() const;                         // vIndex: 9
-    virtual void                      setColor(std::optional<mce::Color> c);    // vIndex: 10
-    virtual bool                      hasDuration() const;                      // vIndex: 11
-    virtual std::optional<float>      getTotalTimeLeft() const;                 // vIndex: 12
-    virtual void                      setTotalTimeLeft(std::optional<float> t); // vIndex: 13
-};
-} // namespace extension
 
 } // namespace debug_shape
+
+namespace debug_shape::extension {
+
+class IBoundsBox : public IDrawer {
+public:
+    // DSNDAPI static std::unique_ptr<IBoundsBox>
+    // create(AABB const& bounds, mce::Color const& color = mce::Color::WHITE());
+
+    virtual void setBounds(AABB const& bounds) = 0;
+
+    virtual std::optional<Vec3> getRotation() const = 0; // 旋转
+
+    virtual void setRotation(std::optional<Vec3> rot) = 0;
+
+    virtual std::optional<mce::Color> getColor() const = 0; // 颜色
+
+    virtual void setColor(std::optional<mce::Color> c) = 0;
+
+    virtual bool hasDuration() const = 0; // 是否有持续时间
+
+    virtual std::optional<float> getTotalTimeLeft() const = 0; // 剩余时间(s)
+
+    virtual void setTotalTimeLeft(std::optional<float> t) = 0;
+
+    // v1.21.120
+    virtual DimensionType getDimensionId() const = 0;
+
+    virtual void setDimensionId(DimensionType d) = 0;
+};
+
+} // namespace debug_shape::extension

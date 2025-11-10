@@ -21,7 +21,9 @@ SharedLand DefaultSelector::newLand() const {
         return nullptr;
     }
 
-    return Land::make(*newLandAABB(), getDimensionId(), is3D(), player->getUuid());
+    auto land = Land::make(*newLandAABB(), getDimensionId(), is3D(), player->getUuid());
+    land->markDirty();
+    return land;
 }
 
 
