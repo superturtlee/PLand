@@ -2,7 +2,6 @@
 #include "bstats/Bukkit.h"
 #include "ll/api/utils/SystemUtils.h"
 #include "pland/PLand.h"
-#include "pland/Version.h"
 #include "pland/infra/Config.h"
 
 #include "ll/api/Versions.h"
@@ -157,7 +156,7 @@ struct Telemetry::Impl {
         mBody.osArch                = "amd64";
         mBody.coreCount             = std::thread::hardware_concurrency();
         mBody.onlineMode            = ll::service::getPropertiesSettings().value().mIsOnlineMode;
-        mBody.service.pluginVersion = PLAND_VERSION_STRING;
+        mBody.service.pluginVersion = PLand::getVersion().build;
 
         mBody.osName    = ll::sys_utils::isWine() ? "Linux" : "Windows";
         mBody.osVersion = ll::sys_utils::getSystemVersion().to_string();
