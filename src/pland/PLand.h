@@ -7,6 +7,9 @@
 namespace ll ::thread {
 class ThreadPoolExecutor;
 }
+namespace ll::data {
+struct Version;
+}
 
 #ifdef LD_DEVTOOL
 namespace devtool {
@@ -41,6 +44,8 @@ public: /* public */
 #ifdef LD_DEVTOOL
     [[nodiscard]] devtool::DevToolApp* getDevToolApp() const;
 #endif
+
+    LDNDAPI static ll::data::Version const& getVersion();
 
 private:
     struct Impl;

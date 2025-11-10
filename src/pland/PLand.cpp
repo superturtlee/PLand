@@ -225,6 +225,15 @@ ll::thread::ThreadPoolExecutor* PLand::getThreadPool() const { return mImpl->mTh
 devtool::DevToolApp* PLand::getDevToolApp() const { return mImpl->mDevToolApp.get(); }
 #endif
 
+ll::data::Version const& PLand::getVersion() {
+    static ll::data::Version version;
+    version.major = PLAND_VERSION_MAJOR;
+    version.minor = PLAND_VERSION_MINOR;
+    version.patch = PLAND_VERSION_PATCH;
+    version.build = PLAND_VERSION_STRING;
+    return version;
+}
+
 
 } // namespace land
 
