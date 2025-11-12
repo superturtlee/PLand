@@ -121,5 +121,17 @@ struct LandContext {
 
 STATIC_ASSERT_AGGREGATE(LandPermTable);
 STATIC_ASSERT_AGGREGATE(LandContext);
+template <typename T, typename I>
+concept AssertPosField = requires(T const& t, I const& i) {
+    { t.min } -> std::convertible_to<I>;
+    { t.max } -> std::convertible_to<I>;
+    { i.x } -> std::convertible_to<int>;
+    { i.y } -> std::convertible_to<int>;
+    { i.z } -> std::convertible_to<int>;
+};
+static_assert(
+    AssertPosField<LandAABB, LandPos>,
+    "If the field is changed, please update the data transformation rules accordingly."
+);
 
 } // namespace land
