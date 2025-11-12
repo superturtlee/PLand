@@ -4,12 +4,14 @@
 #include "Global.h"
 #include "ll/api/mod/NativeMod.h"
 
-namespace ll ::thread {
+namespace ll {
+namespace thread {
 class ThreadPoolExecutor;
 }
-namespace ll::data {
+namespace data {
 struct Version;
 }
+} // namespace ll
 
 #ifdef LD_DEVTOOL
 namespace devtool {
@@ -48,6 +50,9 @@ public: /* public */
     LDNDAPI static ll::data::Version const& getVersion();
 
 private:
+    static void printLogo(ll::io::Logger& logger);
+    void        checkVersion(ll::io::Logger& logger);
+
     struct Impl;
     std::unique_ptr<Impl> mImpl{nullptr};
 };

@@ -53,43 +53,130 @@ struct PLand::Impl {
     std::unique_ptr<devtool::DevToolApp> mDevToolApp{nullptr};
 #endif
 
-public: // API
-    explicit Impl() : mSelf(*ll::mod::NativeMod::current()) {
-        // !! 这里的构造时机很早，请不要在这里初始化任何带有依赖的资源 !!
-    }
-
-    ~Impl() {
-        // !! 务必注意析构顺序 !!
-#ifdef LD_DEVTOOL
-        if (land::Config::cfg.internal.devTools) {
-            this->mDevToolApp.reset();
-        }
-#endif
-        ll::event::EventBus::getInstance().removeListener(this->mConfigReloadListener);
-
-        auto& logger = mSelf.getLogger();
-        this->mTelemetry.reset();
-
-        logger.debug("Saving land registry...");
-        this->mLandRegistry->save();
-
-        logger.debug("Destroying resources...");
-        this->mLandScheduler.reset();
-        this->mEventListener.reset();
-        this->mSafeTeleport.reset();
-        this->mSelectorManager.reset();
-        this->mDrawHandleManager.reset();
-        this->mLandRegistry.reset();
-
-        logger.debug("Destroying thread pool...");
-        this->mThreadPoolExecutor->destroy();
-        this->mThreadPoolExecutor.reset();
-    }
+    explicit Impl() : mSelf(*ll::mod::NativeMod::current()) {}
 };
 
 
 bool PLand::load() {
     auto& logger = getSelf().getLogger();
+    printLogo(logger);
+    checkVersion(logger);
+
+    if (auto res = ll::i18n::getInstance().load(getSelf().getLangDir()); !res) {
+        logger.error("Load language file failed, plugin will use default language.");
+        res.error().log(logger);
+    }
+
+    Config::tryLoad();
+    logger.setLevel(Config::cfg.logLevel);
+
+    mImpl->mThreadPoolExecutor = std::make_unique<ll::thread::ThreadPoolExecutor>("PLand-ThreadPool", 2);
+
+    mImpl->mLandRegistry = std::make_unique<land::LandRegistry>();
+    EconomySystem::getInstance().initEconomySystem();
+
+#ifdef DEBUG
+    logger.warn("Debug Mode");
+    logger.setLevel(ll::io::LogLevel::Trace);
+#endif
+
+    return true;
+}
+
+bool PLand::enable() {
+    LandCommand::setup();
+    mImpl->mLandScheduler     = std::make_unique<LandScheduler>();
+    mImpl->mEventListener     = std::make_unique<EventListener>();
+    mImpl->mSafeTeleport      = std::make_unique<SafeTeleport>();
+    mImpl->mSelectorManager   = std::make_unique<SelectorManager>();
+    mImpl->mDrawHandleManager = std::make_unique<DrawHandleManager>();
+    mImpl->mTelemetry         = std::make_unique<network::Telemetry>(this);
+
+    mImpl->mConfigReloadListener = ll::event::EventBus::getInstance().emplaceListener<events::ConfigReloadEvent>(
+        [this](events::ConfigReloadEvent& ev [[maybe_unused]]) {
+            mImpl->mEventListener.reset();
+            mImpl->mEventListener = std::make_unique<EventListener>();
+
+            EconomySystem::getInstance().reloadEconomySystem();
+
+            mImpl->mTelemetry.reset();
+            mImpl->mTelemetry = std::make_unique<network::Telemetry>(this);
+        }
+    );
+
+
+#ifdef LD_TEST
+    test::TestMain::setup();
+#endif
+
+#ifdef LD_DEVTOOL
+    if (land::Config::cfg.internal.devTools) {
+        mImpl->mDevToolApp = devtool::DevToolApp::make();
+    }
+#endif
+
+    return true;
+}
+
+bool PLand::disable() {
+#ifdef LD_DEVTOOL
+    if (Config::cfg.internal.devTools) {
+        mImpl->mDevToolApp.reset();
+    }
+#endif
+    ll::event::EventBus::getInstance().removeListener(mImpl->mConfigReloadListener);
+
+    auto& logger = mImpl->mSelf.getLogger();
+    mImpl->mTelemetry.reset();
+
+    logger.debug("Saving land registry...");
+    mImpl->mLandRegistry->save();
+
+    logger.debug("Destroying resources...");
+    mImpl->mLandScheduler.reset();
+    mImpl->mEventListener.reset();
+    mImpl->mSafeTeleport.reset();
+    mImpl->mSelectorManager.reset();
+    mImpl->mDrawHandleManager.reset();
+    mImpl->mLandRegistry.reset();
+
+    logger.debug("Destroying thread pool...");
+    mImpl->mThreadPoolExecutor->destroy();
+    mImpl->mThreadPoolExecutor.reset();
+    return true;
+}
+
+bool PLand::unload() { return true; }
+
+PLand& PLand::getInstance() {
+    static PLand instance;
+    return instance;
+}
+
+PLand::PLand() : mImpl(std::make_unique<Impl>()) {}
+
+ll::mod::NativeMod& PLand::getSelf() const { return mImpl->mSelf; }
+SafeTeleport*       PLand::getSafeTeleport() const { return mImpl->mSafeTeleport.get(); }
+LandScheduler*      PLand::getLandScheduler() const { return mImpl->mLandScheduler.get(); }
+SelectorManager*    PLand::getSelectorManager() const { return mImpl->mSelectorManager.get(); }
+LandRegistry*       PLand::getLandRegistry() const { return mImpl->mLandRegistry.get(); }
+DrawHandleManager*  PLand::getDrawHandleManager() const { return mImpl->mDrawHandleManager.get(); }
+
+ll::thread::ThreadPoolExecutor* PLand::getThreadPool() const { return mImpl->mThreadPoolExecutor.get(); }
+
+#ifdef LD_DEVTOOL
+devtool::DevToolApp* PLand::getDevToolApp() const { return mImpl->mDevToolApp.get(); }
+#endif
+
+ll::data::Version const& PLand::getVersion() {
+    static ll::data::Version version;
+    version.major = PLAND_VERSION_MAJOR;
+    version.minor = PLAND_VERSION_MINOR;
+    version.patch = PLAND_VERSION_PATCH;
+    version.build = PLAND_VERSION_STRING;
+    return version;
+}
+void PLand::printLogo(ll::io::Logger& logger) {
     logger.info(R"(  _____   _                        _ )");
     logger.info(R"( |  __ \ | |                      | |)");
     logger.info(R"( | |__) || |      __ _  _ __    __| |)");
@@ -98,7 +185,8 @@ bool PLand::load() {
     logger.info(R"( |_|     |______|\__,_||_| |_| \__,_|)");
     logger.info(R"(                                     )");
     logger.info("Loading...");
-
+}
+void PLand::checkVersion(ll::io::Logger& logger) {
     if (PLAND_VERSION_SNAPSHOT) {
         logger.warn("Version: {}", PLAND_VERSION_STRING);
         logger.warn("您当前正在使用开发快照版本，此版本可能某些功能异常、损坏、甚至导致崩溃，请勿在生产环境中使用。");
@@ -141,97 +229,6 @@ bool PLand::load() {
 #else
     logger.info("iListenAttentively Version: Unknown");
 #endif
-
-    if (auto res = ll::i18n::getInstance().load(getSelf().getLangDir()); !res) {
-        logger.error("Load language file failed, plugin will use default language.");
-        res.error().log(logger);
-    }
-
-    land::Config::tryLoad();
-    logger.setLevel(land::Config::cfg.logLevel);
-
-    mImpl->mThreadPoolExecutor = std::make_unique<ll::thread::ThreadPoolExecutor>("PLand-ThreadPool", 2);
-
-    mImpl->mLandRegistry = std::make_unique<land::LandRegistry>();
-    land::EconomySystem::getInstance().initEconomySystem();
-
-#ifdef DEBUG
-    logger.warn("Debug Mode");
-    logger.setLevel(ll::io::LogLevel::Trace);
-#endif
-
-    return true;
-}
-
-bool PLand::enable() {
-    land::LandCommand::setup();
-    mImpl->mLandScheduler     = std::make_unique<land::LandScheduler>();
-    mImpl->mEventListener     = std::make_unique<land::EventListener>();
-    mImpl->mSafeTeleport      = std::make_unique<land::SafeTeleport>();
-    mImpl->mSelectorManager   = std::make_unique<land::SelectorManager>();
-    mImpl->mDrawHandleManager = std::make_unique<land::DrawHandleManager>();
-    mImpl->mTelemetry         = std::make_unique<network::Telemetry>(this);
-
-    mImpl->mConfigReloadListener = ll::event::EventBus::getInstance().emplaceListener<events::ConfigReloadEvent>(
-        [this](events::ConfigReloadEvent& ev [[maybe_unused]]) {
-            mImpl->mEventListener.reset();
-            mImpl->mEventListener = std::make_unique<land::EventListener>();
-
-            EconomySystem::getInstance().reloadEconomySystem();
-
-            mImpl->mTelemetry.reset();
-            mImpl->mTelemetry = std::make_unique<network::Telemetry>(this);
-        }
-    );
-
-
-#ifdef LD_TEST
-    test::TestMain::setup();
-#endif
-
-#ifdef LD_DEVTOOL
-    if (land::Config::cfg.internal.devTools) {
-        mImpl->mDevToolApp = devtool::DevToolApp::make();
-    }
-#endif
-
-    return true;
-}
-
-bool PLand::disable() {
-    mImpl.reset();
-    return true;
-}
-
-bool PLand::unload() { return true; }
-
-PLand& PLand::getInstance() {
-    static PLand instance;
-    return instance;
-}
-
-PLand::PLand() : mImpl(std::make_unique<Impl>()) {}
-
-ll::mod::NativeMod& PLand::getSelf() const { return mImpl->mSelf; }
-SafeTeleport*       PLand::getSafeTeleport() const { return mImpl->mSafeTeleport.get(); }
-LandScheduler*      PLand::getLandScheduler() const { return mImpl->mLandScheduler.get(); }
-SelectorManager*    PLand::getSelectorManager() const { return mImpl->mSelectorManager.get(); }
-LandRegistry*       PLand::getLandRegistry() const { return mImpl->mLandRegistry.get(); }
-DrawHandleManager*  PLand::getDrawHandleManager() const { return mImpl->mDrawHandleManager.get(); }
-
-ll::thread::ThreadPoolExecutor* PLand::getThreadPool() const { return mImpl->mThreadPoolExecutor.get(); }
-
-#ifdef LD_DEVTOOL
-devtool::DevToolApp* PLand::getDevToolApp() const { return mImpl->mDevToolApp.get(); }
-#endif
-
-ll::data::Version const& PLand::getVersion() {
-    static ll::data::Version version;
-    version.major = PLAND_VERSION_MAJOR;
-    version.minor = PLAND_VERSION_MINOR;
-    version.patch = PLAND_VERSION_PATCH;
-    version.build = PLAND_VERSION_STRING;
-    return version;
 }
 
 
