@@ -45,43 +45,69 @@ static std::unordered_map<HashedStringView, bool LandPermTable::*> BlockFunction
 
 // A map to convert permission names (from config) to member pointers.
 static const std::unordered_map<HashedStringView, bool LandPermTable::*> StringToPermPtrMap = {
-    {          {"allowPlace"},           &LandPermTable::allowPlace},
-    {    {"useFlintAndSteel"},     &LandPermTable::useFlintAndSteel},
-    {         {"useBoneMeal"},          &LandPermTable::useBoneMeal},
-    {{"allowAttackDragonEgg"}, &LandPermTable::allowAttackDragonEgg},
-    {              {"useBed"},               &LandPermTable::useBed},
-    {      {"allowOpenChest"},       &LandPermTable::allowOpenChest},
-    {         {"useCampfire"},          &LandPermTable::useCampfire},
-    {        {"useComposter"},         &LandPermTable::useComposter},
-    {        {"useNoteBlock"},         &LandPermTable::useNoteBlock},
-    {          {"useJukebox"},           &LandPermTable::useJukebox},
-    {             {"useBell"},              &LandPermTable::useBell},
-    { {"useDaylightDetector"},  &LandPermTable::useDaylightDetector},
-    {          {"useLectern"},           &LandPermTable::useLectern},
-    {         {"useCauldron"},          &LandPermTable::useCauldron},
-    {    {"useRespawnAnchor"},     &LandPermTable::useRespawnAnchor},
-    {       {"editFlowerPot"},        &LandPermTable::editFlowerPot},
-    {        {"allowDestroy"},         &LandPermTable::allowDestroy},
-    { {"useCartographyTable"},  &LandPermTable::useCartographyTable},
-    {    {"useSmithingTable"},     &LandPermTable::useSmithingTable},
-    {     {"useBrewingStand"},      &LandPermTable::useBrewingStand},
-    {            {"useAnvil"},             &LandPermTable::useAnvil},
-    {       {"useGrindstone"},        &LandPermTable::useGrindstone},
-    {  {"useEnchantingTable"},   &LandPermTable::useEnchantingTable},
-    {           {"useBarrel"},            &LandPermTable::useBarrel},
-    {           {"useBeacon"},            &LandPermTable::useBeacon},
-    {           {"useHopper"},            &LandPermTable::useHopper},
-    {          {"useDropper"},           &LandPermTable::useDropper},
-    {        {"useDispenser"},         &LandPermTable::useDispenser},
-    {             {"useLoom"},              &LandPermTable::useLoom},
-    {      {"useStonecutter"},       &LandPermTable::useStonecutter},
-    {          {"useCrafter"},           &LandPermTable::useCrafter},
-    {{"useChiseledBookshelf"}, &LandPermTable::useChiseledBookshelf},
-    {             {"useCake"},              &LandPermTable::useCake},
-    {       {"useComparator"},        &LandPermTable::useComparator},
-    {         {"useRepeater"},          &LandPermTable::useRepeater},
-    {          {"useBeeNest"},           &LandPermTable::useBeeNest},
-    {            {"useVault"},             &LandPermTable::useVault}
+    // 新的分组权限
+    {         {"allowDestroy"},          &LandPermTable::allowDestroy},
+    {           {"allowPlace"},            &LandPermTable::allowPlace},
+    {        {"allowInteract"},         &LandPermTable::allowInteract},
+    {    {"allowPlayerDamage"},     &LandPermTable::allowPlayerDamage},
+    {   {"allowMonsterDamage"},    &LandPermTable::allowMonsterDamage},
+    {   {"allowPassiveDamage"},    &LandPermTable::allowPassiveDamage},
+    {   {"allowSpecialDamage"},    &LandPermTable::allowSpecialDamage},
+    {      {"allowPickupItem"},       &LandPermTable::allowPickupItem},
+    {        {"allowDropItem"},         &LandPermTable::allowDropItem},
+    {{"allowProjectileCreate"}, &LandPermTable::allowProjectileCreate},
+    {      {"allowRideEntity"},       &LandPermTable::allowRideEntity},
+    {  {"allowInteractEntity"},   &LandPermTable::allowInteractEntity},
+    {    {"allowActorDestroy"},     &LandPermTable::allowActorDestroy},
+    {             {"useTools"},              &LandPermTable::useTools},
+    {            {"useBucket"},             &LandPermTable::useBucket},
+    {          {"useFurnaces"},           &LandPermTable::useFurnaces},
+    {    {"useCraftingBlocks"},     &LandPermTable::useCraftingBlocks},
+    {     {"useStorageBlocks"},      &LandPermTable::useStorageBlocks},
+    {    {"useRedstoneBlocks"},     &LandPermTable::useRedstoneBlocks},
+    {     {"useUtilityBlocks"},      &LandPermTable::useUtilityBlocks},
+    {        {"useDecorative"},         &LandPermTable::useDecorative},
+    {          {"useMovement"},           &LandPermTable::useMovement},
+    {            {"editSigns"},             &LandPermTable::editSigns},
+    {        {"editFlowerPot"},         &LandPermTable::editFlowerPot},
+    {               {"useBed"},                &LandPermTable::useBed},
+    {              {"useCake"},               &LandPermTable::useCake},
+    {        {"placeVehicles"},         &LandPermTable::placeVehicles},
+    { {"allowAttackDragonEgg"},  &LandPermTable::allowAttackDragonEgg},
+
+    // 兼容性映射 - 保留旧权限名称
+    {     {"useFlintAndSteel"},      &LandPermTable::useFlintAndSteel},
+    {          {"useBoneMeal"},           &LandPermTable::useBoneMeal},
+    {       {"allowOpenChest"},        &LandPermTable::allowOpenChest},
+    {          {"useCampfire"},           &LandPermTable::useCampfire},
+    {         {"useComposter"},          &LandPermTable::useComposter},
+    {         {"useNoteBlock"},          &LandPermTable::useNoteBlock},
+    {           {"useJukebox"},            &LandPermTable::useJukebox},
+    {              {"useBell"},               &LandPermTable::useBell},
+    {  {"useDaylightDetector"},   &LandPermTable::useDaylightDetector},
+    {           {"useLectern"},            &LandPermTable::useLectern},
+    {          {"useCauldron"},           &LandPermTable::useCauldron},
+    {     {"useRespawnAnchor"},      &LandPermTable::useRespawnAnchor},
+    {        {"editFlowerPot"},         &LandPermTable::editFlowerPot},
+    {  {"useCartographyTable"},   &LandPermTable::useCartographyTable},
+    {     {"useSmithingTable"},      &LandPermTable::useSmithingTable},
+    {      {"useBrewingStand"},       &LandPermTable::useBrewingStand},
+    {             {"useAnvil"},              &LandPermTable::useAnvil},
+    {        {"useGrindstone"},         &LandPermTable::useGrindstone},
+    {   {"useEnchantingTable"},    &LandPermTable::useEnchantingTable},
+    {            {"useBarrel"},             &LandPermTable::useBarrel},
+    {            {"useBeacon"},             &LandPermTable::useBeacon},
+    {            {"useHopper"},             &LandPermTable::useHopper},
+    {           {"useDropper"},            &LandPermTable::useDropper},
+    {         {"useDispenser"},          &LandPermTable::useDispenser},
+    {              {"useLoom"},               &LandPermTable::useLoom},
+    {       {"useStonecutter"},        &LandPermTable::useStonecutter},
+    {           {"useCrafter"},            &LandPermTable::useCrafter},
+    { {"useChiseledBookshelf"},  &LandPermTable::useChiseledBookshelf},
+    {        {"useComparator"},         &LandPermTable::useComparator},
+    {          {"useRepeater"},           &LandPermTable::useRepeater},
+    {           {"useBeeNest"},            &LandPermTable::useBeeNest},
+    {             {"useVault"},              &LandPermTable::useVault}
 };
 
 // Helper to load permissions from config
@@ -217,30 +243,17 @@ void EventListener::registerLLPlayerListeners() {
                             !tab.useBucket,
                             EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useBucket denied")
                         );
-                    } else if (vftable == HatchetItem::$vftable()) {
+                    } else if (vftable == HatchetItem::$vftable() || vftable == HoeItem::$vftable()
+                               || vftable == ShovelItem::$vftable()) {
                         CANCEL_AND_RETURN_IF(
-                            !tab.allowAxePeeled,
-                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "allowAxePeeled denied")
+                            !tab.useTools,
+                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useTools denied")
                         );
-                    } else if (vftable == HoeItem::$vftable()) {
+                    } else if (item->hasTag(HashedTypeName::BoatTag) || item->hasTag(HashedTypeName::BoatsTag)
+                               || item->hasTag(HashedTypeName::MinecartTag)) {
                         CANCEL_AND_RETURN_IF(
-                            !tab.useHoe,
-                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useHoe denied")
-                        );
-                    } else if (vftable == ShovelItem::$vftable()) {
-                        CANCEL_AND_RETURN_IF(
-                            !tab.useShovel,
-                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useShovel denied")
-                        );
-                    } else if (item->hasTag(HashedTypeName::BoatTag) || item->hasTag(HashedTypeName::BoatsTag)) {
-                        CANCEL_AND_RETURN_IF(
-                            !tab.placeBoat,
-                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "placeBoat denied")
-                        );
-                    } else if (item->hasTag(HashedTypeName::MinecartTag)) {
-                        CANCEL_AND_RETURN_IF(
-                            !tab.placeMinecart,
-                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "placeMinecart denied")
+                            !tab.placeVehicles,
+                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "placeVehicles denied")
                         );
                     }
                 }
@@ -288,65 +301,41 @@ void EventListener::registerLLPlayerListeners() {
                     }
 
                     void** vftable = *reinterpret_cast<void** const*>(&legacyBlock);
-                    if (legacyBlock.isButtonBlock()) {
+                    if (legacyBlock.isButtonBlock() || legacyBlock.isLeverBlock()) {
                         CANCEL_AND_RETURN_IF(
-                            !tab.useButton,
-                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useButton denied")
+                            !tab.useRedstoneBlocks,
+                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useRedstoneBlocks denied")
                         );
-                    } else if (legacyBlock.isDoorBlock()) {
+                    } else if (legacyBlock.isDoorBlock() || legacyBlock.isFenceGateBlock() || legacyBlock.mIsTrapdoor) {
                         CANCEL_AND_RETURN_IF(
-                            !tab.useDoor,
-                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useDoor denied")
-                        );
-                    } else if (legacyBlock.isFenceGateBlock()) {
-                        CANCEL_AND_RETURN_IF(
-                            !tab.useFenceGate,
-                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useFenceGate denied")
+                            !tab.useMovement,
+                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useMovement denied")
                         );
                     } else if (legacyBlock.isFenceBlock()) {
                         CANCEL_AND_RETURN_IF(
                             !tab.allowInteractEntity,
                             EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "allowInteractEntity denied")
                         );
-                    } else if (legacyBlock.mIsTrapdoor) {
-                        CANCEL_AND_RETURN_IF(
-                            !tab.useTrapdoor,
-                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useTrapdoor denied")
-                        );
                     } else if (vftable == SignBlock::$vftable() || vftable == HangingSignBlock::$vftable()) {
                         CANCEL_AND_RETURN_IF(
-                            !tab.editSign,
-                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "editSign denied")
+                            !tab.editSigns,
+                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "editSigns denied")
                         );
                     } else if (vftable == ShulkerBoxBlock::$vftable()) {
                         CANCEL_AND_RETURN_IF(
-                            !tab.useShulkerBox,
-                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useShulkerBox denied")
+                            !tab.useStorageBlocks,
+                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useStorageBlocks denied")
                         );
                     } else if (legacyBlock.isCraftingBlock()) {
                         CANCEL_AND_RETURN_IF(
-                            !tab.useCraftingTable,
-                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useCraftingTable denied")
+                            !tab.useCraftingBlocks,
+                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useCraftingBlocks denied")
                         );
-                    } else if (legacyBlock.isLeverBlock()) {
+                    } else if (vftable == BlastFurnaceBlock::$vftable() || vftable == FurnaceBlock::$vftable()
+                               || vftable == SmokerBlock::$vftable()) {
                         CANCEL_AND_RETURN_IF(
-                            !tab.useLever,
-                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useLever denied")
-                        );
-                    } else if (vftable == BlastFurnaceBlock::$vftable()) {
-                        CANCEL_AND_RETURN_IF(
-                            !tab.useBlastFurnace,
-                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useBlastFurnace denied")
-                        );
-                    } else if (vftable == FurnaceBlock::$vftable()) {
-                        CANCEL_AND_RETURN_IF(
-                            !tab.useFurnace,
-                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useFurnace denied")
-                        );
-                    } else if (vftable == SmokerBlock::$vftable()) {
-                        CANCEL_AND_RETURN_IF(
-                            !tab.useSmoker,
-                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useSmoker denied")
+                            !tab.useFurnaces,
+                            EVENT_TRACE("PlayerInteractBlockEvent", EVENT_TRACE_CANCEL, "useFurnaces denied")
                         );
                     }
                 }

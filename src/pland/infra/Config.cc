@@ -35,58 +35,71 @@ bool Config::trySave() {
 Config Config::cfg = [] {
     Config c;
     c.protection.permissionMaps.itemSpecific = {
-        {          "minecraft:skull",       "allowPlace"},
-        {         "minecraft:banner",       "allowPlace"},
-        {   "minecraft:glow_ink_sac",       "allowPlace"},
-        {    "minecraft:end_crystal",       "allowPlace"},
-        {      "minecraft:ender_eye",       "allowPlace"},
-        {"minecraft:flint_and_steel", "useFlintAndSteel"},
-        {      "minecraft:bone_meal",      "useBoneMeal"},
-        {    "minecraft:armor_stand",       "allowPlace"}
+        // 基础权限 - 放置物品
+        {          "minecraft:skull", "allowPlace"},
+        {         "minecraft:banner", "allowPlace"},
+        {   "minecraft:glow_ink_sac", "allowPlace"},
+        {    "minecraft:end_crystal", "allowPlace"},
+        {      "minecraft:ender_eye", "allowPlace"},
+        {    "minecraft:armor_stand", "allowPlace"},
+        // 工具权限
+        {"minecraft:flint_and_steel",   "useTools"},
+        {      "minecraft:bone_meal",   "useTools"}
     };
     c.protection.permissionMaps.blockSpecific = {
+        // 特殊权限
         {                "minecraft:dragon_egg", "allowAttackDragonEgg"},
         {                       "minecraft:bed",               "useBed"},
-        {                     "minecraft:chest",       "allowOpenChest"},
-        {             "minecraft:trapped_chest",       "allowOpenChest"},
-        {                  "minecraft:campfire",          "useCampfire"},
-        {             "minecraft:soul_campfire",          "useCampfire"},
-        {                 "minecraft:composter",         "useComposter"},
-        {                 "minecraft:noteblock",         "useNoteBlock"},
-        {                   "minecraft:jukebox",           "useJukebox"},
-        {                      "minecraft:bell",              "useBell"},
-        {"minecraft:daylight_detector_inverted",  "useDaylightDetector"},
-        {         "minecraft:daylight_detector",  "useDaylightDetector"},
-        {                   "minecraft:lectern",           "useLectern"},
-        {                  "minecraft:cauldron",          "useCauldron"},
-        {            "minecraft:respawn_anchor",     "useRespawnAnchor"},
+        {                      "minecraft:cake",              "useCake"},
+        // 存储类方块
+        {                     "minecraft:chest",     "useStorageBlocks"},
+        {             "minecraft:trapped_chest",     "useStorageBlocks"},
+        // 功能类方块
+        {                  "minecraft:campfire",     "useUtilityBlocks"},
+        {             "minecraft:soul_campfire",     "useUtilityBlocks"},
+        {                 "minecraft:composter",     "useUtilityBlocks"},
+        {                   "minecraft:lectern",     "useUtilityBlocks"},
+        {                  "minecraft:cauldron",     "useUtilityBlocks"},
+        {            "minecraft:respawn_anchor",     "useUtilityBlocks"},
+        // 装饰类方块
+        {                 "minecraft:noteblock",        "useDecorative"},
+        {                   "minecraft:jukebox",        "useDecorative"},
+        {                      "minecraft:bell",        "useDecorative"},
+        // 红石类方块
+        {"minecraft:daylight_detector_inverted",    "useRedstoneBlocks"},
+        {         "minecraft:daylight_detector",    "useRedstoneBlocks"},
+        // 编辑类
         {                "minecraft:flower_pot",        "editFlowerPot"},
+        // 基础破坏权限
         {          "minecraft:sweet_berry_bush",         "allowDestroy"}
     };
     c.protection.permissionMaps.blockFunctional = {
-        {   "minecraft:cartography_table",  "useCartographyTable"},
-        {      "minecraft:smithing_table",     "useSmithingTable"},
-        {       "minecraft:brewing_stand",      "useBrewingStand"},
-        {               "minecraft:anvil",             "useAnvil"},
-        {          "minecraft:grindstone",        "useGrindstone"},
-        {    "minecraft:enchanting_table",   "useEnchantingTable"},
-        {              "minecraft:barrel",            "useBarrel"},
-        {              "minecraft:beacon",            "useBeacon"},
-        {              "minecraft:hopper",            "useHopper"},
-        {             "minecraft:dropper",           "useDropper"},
-        {           "minecraft:dispenser",         "useDispenser"},
-        {                "minecraft:loom",              "useLoom"},
-        {   "minecraft:stonecutter_block",       "useStonecutter"},
-        {             "minecraft:crafter",           "useCrafter"},
-        {  "minecraft:chiseled_bookshelf", "useChiseledBookshelf"},
-        {                "minecraft:cake",              "useCake"},
-        {"minecraft:unpowered_comparator",        "useComparator"},
-        {  "minecraft:powered_comparator",        "useComparator"},
-        {  "minecraft:unpowered_repeater",          "useRepeater"},
-        {    "minecraft:powered_repeater",          "useRepeater"},
-        {            "minecraft:bee_nest",           "useBeeNest"},
-        {             "minecraft:beehive",           "useBeeNest"},
-        {               "minecraft:vault",             "useVault"}
+        // 工作台类方块
+        {   "minecraft:cartography_table", "useCraftingBlocks"},
+        {      "minecraft:smithing_table", "useCraftingBlocks"},
+        {       "minecraft:brewing_stand", "useCraftingBlocks"},
+        {               "minecraft:anvil", "useCraftingBlocks"},
+        {          "minecraft:grindstone", "useCraftingBlocks"},
+        {    "minecraft:enchanting_table", "useCraftingBlocks"},
+        {                "minecraft:loom", "useCraftingBlocks"},
+        {   "minecraft:stonecutter_block", "useCraftingBlocks"},
+        {             "minecraft:crafter", "useCraftingBlocks"},
+        // 存储类方块
+        {              "minecraft:barrel",  "useStorageBlocks"},
+        {              "minecraft:hopper",  "useStorageBlocks"},
+        {  "minecraft:chiseled_bookshelf",  "useStorageBlocks"},
+        {            "minecraft:bee_nest",  "useStorageBlocks"},
+        {             "minecraft:beehive",  "useStorageBlocks"},
+        {               "minecraft:vault",  "useStorageBlocks"},
+        // 红石类方块
+        {             "minecraft:dropper", "useRedstoneBlocks"},
+        {           "minecraft:dispenser", "useRedstoneBlocks"},
+        {"minecraft:unpowered_comparator", "useRedstoneBlocks"},
+        {  "minecraft:powered_comparator", "useRedstoneBlocks"},
+        {  "minecraft:unpowered_repeater", "useRedstoneBlocks"},
+        {    "minecraft:powered_repeater", "useRedstoneBlocks"},
+        // 功能类方块
+        {              "minecraft:beacon",  "useUtilityBlocks"}
     };
     return c;
 }();
