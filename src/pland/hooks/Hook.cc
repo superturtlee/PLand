@@ -61,8 +61,12 @@ LL_TYPE_INSTANCE_HOOK(
     auto  dimId     = hookActor.getDimensionId();
 
     // 获取领地注册表实例
-    auto* db   = PLand::getInstance().getLandRegistry();
-    auto  land = db->getLandAt(pos, dimId);
+    auto* db = PLand::getInstance().getLandRegistry();
+    if (!db) {
+        origin(inEntity, inSpeed);
+        return;
+    }
+    auto land = db->getLandAt(pos, dimId);
 
     auto* player = hookActor.getPlayerOwner();
     if (!player) {
@@ -97,8 +101,11 @@ LL_TYPE_INSTANCE_HOOK(
     ::BlockPos const& pos
 ) {
     // 获取领地注册表实例
-    auto* db   = PLand::getInstance().getLandRegistry();
-    auto  land = db->getLandAt(pos, region.getDimensionId());
+    auto* db = PLand::getInstance().getLandRegistry();
+    if (!db) {
+        return origin(region, pos);
+    }
+    auto land = db->getLandAt(pos, region.getDimensionId());
 
     // 如果在领地内且不允许实体破坏，则阻止产蛋
     if (land && !land->getPermTable().allowActorDestroy) {
@@ -122,8 +129,12 @@ LL_TYPE_INSTANCE_HOOK(
     ::BlockPos const& firePos
 ) {
     // 获取领地注册表实例
-    auto* db   = PLand::getInstance().getLandRegistry();
-    auto  land = db->getLandAt(pos, region.getDimensionId());
+    auto* db = PLand::getInstance().getLandRegistry();
+    if (!db) {
+        origin(region, pos, chance, randomize, age, firePos);
+        return;
+    }
+    auto land = db->getLandAt(pos, region.getDimensionId());
 
     // 如果在领地内且不允许火焰蔓延，则拦截
     if (land && !land->getPermTable().allowFireSpread) {
@@ -131,7 +142,6 @@ LL_TYPE_INSTANCE_HOOK(
     }
     origin(region, pos, chance, randomize, age, firePos);
 }
-
 
 
 // Fix [#158](https://github.com/engsr6982/PLand/issues/158)
@@ -148,9 +158,12 @@ LL_TYPE_INSTANCE_HOOK(
         return;
     }
     // 获取领地注册表实例
-    auto* db   = PLand::getInstance().getLandRegistry();
-    auto  land = db->getLandAt(this->mPosition, actor.getDimensionId());
-
+    auto* db = PLand::getInstance().getLandRegistry();
+    if (!db) {
+        origin(actor);
+        return;
+    }
+    auto land = db->getLandAt(this->mPosition, actor.getDimensionId());
 
     if (land && !land->getPermTable().allowOpenChest) {
         return;
