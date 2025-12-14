@@ -1,9 +1,11 @@
 #pragma once
 #include "mc/deps/core/math/Color.h"
+#include "mc/deps/ecs/WeakEntityRef.h"
 #include "pland/Global.h"
 
 #include <mc/deps/core/utility/AutomaticID.h>
 
+class Player;
 
 namespace land {
 class LandAABB;
@@ -24,11 +26,18 @@ struct GeoId {
 };
 
 class IDrawerHandle {
+protected:
+    WeakEntityRef mTargetPlayer;
+
 public:
     LD_DISABLE_COPY_AND_MOVE(IDrawerHandle);
 
     LDAPI explicit IDrawerHandle() = default;
     LDAPI virtual ~IDrawerHandle() = default;
+
+    void setTargetPlayer(Player& player);
+
+    Player* getTargetPlayer() const;
 
     virtual GeoId draw(LandAABB const& aabb, DimensionType dimId, mce::Color const& color) = 0;
 

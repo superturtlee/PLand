@@ -1,5 +1,6 @@
 #include "DebugShapeHandle.h"
 #include "mc/deps/core/math/Vec3.h"
+#include "mc/world/actor/player/Player.h"
 #include "mc/world/phys/AABB.h"
 #include "pland/Global.h"
 #include "pland/aabb/LandAABB.h"
@@ -124,7 +125,10 @@ DebugShapeHandle::~DebugShapeHandle() = default;
 GeoId DebugShapeHandle::draw(LandAABB const& aabb, DimensionType dimId, mce::Color const& color) {
     auto box = newBoundsBox(toMinecraftAABB(aabb), color);
     box->setColor(color);
-    box->draw(dimId);
+    box->setDimensionId(dimId);
+    if (auto* player = getTargetPlayer()) {
+        box->draw(*player);
+    }
 
     auto id = allocatedID();
     impl_->mShapes.emplace(id, std::move(box));
@@ -137,7 +141,10 @@ void DebugShapeHandle::draw(std::shared_ptr<Land> const& land, mce::Color const&
     }
     auto box = newBoundsBox(toMinecraftAABB(land->getAABB()), color);
     box->setColor(color);
-    box->draw(land->getDimensionId());
+    box->setDimensionId(land->getDimensionId());
+    if (auto* player = getTargetPlayer()) {
+        box->draw(*player);
+    }
     impl_->mLandShapes.emplace(land->getId(), std::move(box));
 }
 

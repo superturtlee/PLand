@@ -47,7 +47,8 @@ drawer::IDrawerHandle* DrawHandleManager::getOrCreateHandle(Player& player) {
     auto iter = mDrawHandles.find(player.getUuid());
     if (iter == mDrawHandles.end()) {
         auto handle = createHandle();
-        iter        = mDrawHandles.emplace(player.getUuid(), std::move(handle)).first;
+        handle->setTargetPlayer(player);
+        iter = mDrawHandles.emplace(player.getUuid(), std::move(handle)).first;
     }
     return iter->second.get();
 }

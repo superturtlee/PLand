@@ -1,4 +1,5 @@
 #include "DefaultParticleHandle.h"
+#include "mc/world/actor/player/Player.h"
 #include "pland/Global.h"
 #include "pland/PLand.h"
 #include "pland/aabb/LandAABB.h"
@@ -33,7 +34,6 @@ namespace land::drawer::detail {
 class ParticleSpawner {
     GeoId                                  mId;
     std::vector<SpawnParticleEffectPacket> mPackets;
-    int                                    mDimensionId;
 
     static GeoId getNextGeoId() {
         static uint64 id{1};
@@ -45,7 +45,7 @@ public:
     ParticleSpawner(ParticleSpawner&&) noexcept            = default;
     ParticleSpawner& operator=(ParticleSpawner&&) noexcept = default;
 
-    explicit ParticleSpawner(LandAABB const& aabb, LandDimid dimId) : mId(getNextGeoId()), mDimensionId(dimId) {
+    explicit ParticleSpawner(LandAABB const& aabb, LandDimid dimId) : mId(getNextGeoId()) {
         static std::optional<MolangVariableMap> molang{std::nullopt};
         if (!molang) {
             molang = MolangVariableMap{}; // TODO: 验证 Molang 是否真的有效
@@ -70,9 +70,9 @@ public:
 
     GeoId getId() const { return mId; }
 
-    void tick() {
+    void tick(Player& player) {
         for (auto& packet : mPackets) {
-            packet.sendTo(*packet.mPos, mDimensionId);
+            packet.sendTo(player);
         }
     }
 };
@@ -82,9 +82,10 @@ class DefaultParticleHandle::Impl {
     std::unordered_map<LandID, GeoId>             mDrawedLands;
     std::shared_ptr<std::atomic<bool>>            mQuit;
     std::shared_ptr<ll::coro::InterruptableSleep> mSleep;
+    DefaultParticleHandle&                        mOwner;
 
 public:
-    explicit Impl() {
+    explicit Impl(DefaultParticleHandle& owner) : mOwner(owner) {
         mQuit  = std::make_shared<std::atomic<bool>>(false);
         mSleep = std::make_shared<ll::coro::InterruptableSleep>();
 
@@ -95,8 +96,10 @@ public:
                     break;
                 }
 
-                for (auto& [id, spawner] : mSpawners) {
-                    spawner.tick();
+                if (auto* player = mOwner.getTargetPlayer()) {
+                    for (auto& [id, spawner] : mSpawners) {
+                        spawner.tick(*player);
+                    }
                 }
             }
             co_return;
@@ -156,7 +159,7 @@ public:
     }
 };
 
-DefaultParticleHandle::DefaultParticleHandle() : impl(std::make_unique<Impl>()) {}
+DefaultParticleHandle::DefaultParticleHandle() : impl(std::make_unique<Impl>(*this)) {}
 
 DefaultParticleHandle::~DefaultParticleHandle() = default;
 
