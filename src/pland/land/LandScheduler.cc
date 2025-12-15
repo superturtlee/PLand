@@ -60,13 +60,13 @@ LandScheduler::LandScheduler() {
         }
 
         auto& player   = ev.getPlayer();
-        auto  registry = PLand::getInstance().getLandRegistry();
+        auto& registry = PLand::getInstance().getLandRegistry();
 
-        if (auto settings = registry->getPlayerSettings(player.getUuid()); settings && !settings->showEnterLandTitle) {
+        if (auto settings = registry.getPlayerSettings(player.getUuid()); settings && !settings->showEnterLandTitle) {
             return; // 如果玩家设置不显示进入领地提示,则不显示
         }
 
-        auto land = registry->getLand(ev.getLandID());
+        auto land = registry.getLand(ev.getLandID());
         if (!land) {
             return;
         }
@@ -157,7 +157,7 @@ LandScheduler::~LandScheduler() {
 
 void LandScheduler::tickEvent() {
     auto& bus      = ll::event::EventBus::getInstance();
-    auto  registry = PLand::getInstance().getLandRegistry();
+    auto& registry = PLand::getInstance().getLandRegistry();
 
     auto iter = mPlayers.begin();
     while (iter != mPlayers.end()) {
@@ -170,7 +170,7 @@ void LandScheduler::tickEvent() {
             int&  lastDimId  = this->mDimensionMap[player];
             auto& lastLandID = this->mLandIdMap[player];
 
-            auto   land          = registry->getLandAt(currentPos, currentDimId);
+            auto   land          = registry.getLandAt(currentPos, currentDimId);
             LandID currentLandId = land ? land->getId() : -1;
 
             // 处理维度变化
@@ -200,7 +200,7 @@ void LandScheduler::tickEvent() {
 
 void LandScheduler::tickLandTip() {
     auto& playerInfo = ll::service::PlayerInfo::getInstance();
-    auto  registry   = PLand::getInstance().getLandRegistry();
+    auto& registry   = PLand::getInstance().getLandRegistry();
 
     SetTitlePacket pkt(SetTitlePacket::TitleType::Actionbar);
     for (auto& [player, landId] : mLandIdMap) {
@@ -208,12 +208,12 @@ void LandScheduler::tickLandTip() {
             continue;
         }
 
-        if (auto settings = registry->getPlayerSettings(player->getUuid());
+        if (auto settings = registry.getPlayerSettings(player->getUuid());
             settings && !settings->showBottomContinuedTip) {
             continue; // 如果玩家设置不显示底部提示，则跳过
         }
 
-        auto land = registry->getLand(landId);
+        auto land = registry.getLand(landId);
         if (!land) {
             continue;
         }

@@ -19,7 +19,7 @@
 namespace land {
 
 void EventListener::registerLLSessionListeners() {
-    auto* db     = PLand::getInstance().getLandRegistry();
+    auto* db     = &PLand::getInstance().getLandRegistry();
     auto* bus    = &ll::event::EventBus::getInstance();
     auto* logger = &land::PLand::getInstance().getSelf().getLogger();
 

@@ -399,7 +399,7 @@ Result<void, StorageLayerError::Error> LandRegistry::addOrdinaryLand(SharedLand 
     }
     if (!LandCreateValidator::isLandRangeLegal(land->getAABB(), land->getDimensionId(), land->is3D())
         || !LandCreateValidator::isLandInForbiddenRange(land->getAABB(), land->getDimensionId())
-        || !LandCreateValidator::isLandRangeWithOtherCollision(this, land)) {
+        || !LandCreateValidator::isLandRangeWithOtherCollision(*this, land)) {
         return std::unexpected(StorageLayerError::Error::LandRangeIllegal);
     }
     return _addLand(land);

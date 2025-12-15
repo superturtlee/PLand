@@ -89,18 +89,20 @@ void LandBuyGUI::impl(Player& player, DefaultSelector* selector) {
 
     auto fm = BackSimpleForm<>::make();
     fm.setTitle(PLUGIN_NAME + ("| 购买领地"_trf(player)));
-    fm.setContent("领地类型: {}\n体积: {}x{}x{} = {}\n范围: {}\n原价: {}\n折扣价: {}\n{}"_trf(
-        player,
-        is3D ? "3D" : "2D",
-        length,
-        width,
-        height,
-        volume,
-        aabb->toString(),
-        originalPrice,
-        discountedPrice,
-        EconomySystem::getInstance()->getCostMessage(player, discountedPrice)
-    ));
+    fm.setContent(
+        "领地类型: {}\n体积: {}x{}x{} = {}\n范围: {}\n原价: {}\n折扣价: {}\n{}"_trf(
+            player,
+            is3D ? "3D" : "2D",
+            length,
+            width,
+            height,
+            volume,
+            aabb->toString(),
+            originalPrice,
+            discountedPrice,
+            EconomySystem::getInstance()->getCostMessage(player, discountedPrice)
+        )
+    );
 
     fm.appendButton(
         "确认购买"_trf(player),
@@ -128,7 +130,7 @@ void LandBuyGUI::impl(Player& player, DefaultSelector* selector) {
 
             landPtr->setOriginalBuyPrice(discountedPrice);
 
-            if (auto res = PLand::getInstance().getLandRegistry()->addOrdinaryLand(landPtr); !res) {
+            if (auto res = PLand::getInstance().getLandRegistry().addOrdinaryLand(landPtr); !res) {
                 mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "购买领地失败"_trf(pl));
                 StorageLayerError::sendErrorMessage(pl, res.error());
                 (void)economy->add(pl, discountedPrice); // 补回经济
@@ -190,18 +192,20 @@ void LandBuyGUI::impl(Player& player, ChangeLandRangeSelector* reSelector) {
 
     auto fm = BackSimpleForm<>::make();
     fm.setTitle(PLUGIN_NAME + ("| 购买领地 & 重新选区"_trf(player)));
-    fm.setContent("体积: {0}x{1}x{2} = {3}\n范围: {4}\n原购买价格: {5}\n需补差价: {6}\n需退差价: {7}\n{8}"_trf(
-        player,
-        length,                    // 1
-        width,                     // 2
-        height,                    // 3
-        volume,                    // 4
-        aabb->toString(),          // 5
-        originalPrice,             // 6
-        needPay < 0 ? 0 : needPay, // 7
-        refund < 0 ? 0 : refund,   // 8
-        needPay > 0 ? EconomySystem::getInstance()->getCostMessage(player, needPay) : ""
-    ));
+    fm.setContent(
+        "体积: {0}x{1}x{2} = {3}\n范围: {4}\n原购买价格: {5}\n需补差价: {6}\n需退差价: {7}\n{8}"_trf(
+            player,
+            length,                    // 1
+            width,                     // 2
+            height,                    // 3
+            volume,                    // 4
+            aabb->toString(),          // 5
+            originalPrice,             // 6
+            needPay < 0 ? 0 : needPay, // 7
+            refund < 0 ? 0 : refund,   // 8
+            needPay > 0 ? EconomySystem::getInstance()->getCostMessage(player, needPay) : ""
+        )
+    );
 
     fm.appendButton(
         "确认购买"_trf(player),
@@ -238,7 +242,7 @@ void LandBuyGUI::impl(Player& player, ChangeLandRangeSelector* reSelector) {
             }
 
             landPtr->setOriginalBuyPrice(discountedPrice);
-            PLand::getInstance().getLandRegistry()->refreshLandRange(landPtr); // 刷新领地范围
+            PLand::getInstance().getLandRegistry().refreshLandRange(landPtr); // 刷新领地范围
 
             land::PLand::getInstance().getSelectorManager()->stopSelection(pl);
             ll::event::EventBus::getInstance().publish(LandRangeChangeAfterEvent{pl, landPtr, *aabb, needPay, refund});
@@ -338,7 +342,7 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
             SharedLand subLand = subSelector->newSubLand();
             subLand->setOriginalBuyPrice(discountedPrice); // 保存购买价格
 
-            if (!PLand::getInstance().getLandRegistry()->addSubLand(subSelector->getParentLand(), subLand)) {
+            if (!PLand::getInstance().getLandRegistry().addSubLand(subSelector->getParentLand(), subLand)) {
                 mc_utils::sendText<mc_utils::LogLevel::Error>(pl, "领地创建失败，请重试"_trf(pl));
                 (void)economy->add(pl, discountedPrice); // 补回经济
                 return;

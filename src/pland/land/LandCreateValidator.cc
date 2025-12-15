@@ -58,12 +58,12 @@ LandCreateValidator::validateCreateSubLand(Player& player, SharedLand land, Land
 
 
 LandCreateValidator::ValidateResult LandCreateValidator::isPlayerLandCountLimitExceeded(mce::UUID const& uuids) {
-    auto  registry = PLand::getInstance().getLandRegistry();
-    auto  count    = static_cast<int>(registry->getLands(uuids).size());
+    auto& registry = PLand::getInstance().getLandRegistry();
+    auto  count    = static_cast<int>(registry.getLands(uuids).size());
     auto& maxCount = Config::cfg.land.maxLand;
 
     // 非管理员 && 领地数量超过限制
-    if (!registry->isOperator(uuids) && count >= Config::cfg.land.maxLand) {
+    if (!registry.isOperator(uuids) && count >= Config::cfg.land.maxLand) {
         return std::unexpected(ErrorContext::landCountLimitExceeded(count, maxCount));
     }
 
@@ -126,14 +126,14 @@ LandCreateValidator::isLandRangeWithOtherCollision(SharedLand const& land, std::
 }
 
 LandCreateValidator::ValidateResult LandCreateValidator::isLandRangeWithOtherCollision(
-    LandRegistry*           registry,
+    LandRegistry&           registry,
     SharedLand const&       land,
     std::optional<LandAABB> newRange
 ) {
     auto&       aabb       = newRange ? *newRange : land->getAABB();
     auto const& minSpacing = Config::cfg.land.minSpacing;
     auto        expanded   = aabb.expanded(minSpacing, Config::cfg.land.minSpacingIncludeY);
-    auto        lands      = registry->getLandAt(expanded.min.as(), expanded.max.as(), land->getDimensionId());
+    auto        lands      = registry.getLandAt(expanded.min.as(), expanded.max.as(), land->getDimensionId());
     if (lands.empty()) {
         return {};
     }

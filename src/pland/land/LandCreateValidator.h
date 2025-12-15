@@ -96,7 +96,7 @@ public:
     isLandRangeWithOtherCollision(SharedLand const& land, std::optional<LandAABB> newRange = std::nullopt);
 
     LDNDAPI static ValidateResult isLandRangeWithOtherCollision(
-        LandRegistry*           registry,
+        LandRegistry&           registry,
         SharedLand const&       land,
         std::optional<LandAABB> newRange = std::nullopt
     );

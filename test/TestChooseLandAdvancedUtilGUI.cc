@@ -26,7 +26,7 @@ void TestMain::_setupChooseLandAdvancedUtilGUITest() {
             }
             auto& player = *static_cast<Player*>(origin.getEntity());
 
-            auto lands = land::PLand::getInstance().getLandRegistry()->getLands();
+            auto lands = land::PLand::getInstance().getLandRegistry().getLands();
 
             land::ChooseLandAdvancedUtilGUI::sendTo(player, lands, [](Player& self, land::SharedLand land) {
                 self.sendMessage("选择领地: " + land->getName() + "ID: " + std::to_string(land->getId()));

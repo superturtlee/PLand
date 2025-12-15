@@ -25,7 +25,7 @@
 namespace land {
 
 void EventListener::registerILAEntityListeners() {
-    auto* db     = PLand::getInstance().getLandRegistry();
+    auto* db     = &PLand::getInstance().getLandRegistry();
     auto* bus    = &ll::event::EventBus::getInstance();
     auto* logger = &land::PLand::getInstance().getSelf().getLogger();
 

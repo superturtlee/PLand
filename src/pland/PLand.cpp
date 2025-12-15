@@ -162,7 +162,7 @@ ll::mod::NativeMod& PLand::getSelf() const { return mImpl->mSelf; }
 SafeTeleport*       PLand::getSafeTeleport() const { return mImpl->mSafeTeleport.get(); }
 LandScheduler*      PLand::getLandScheduler() const { return mImpl->mLandScheduler.get(); }
 SelectorManager*    PLand::getSelectorManager() const { return mImpl->mSelectorManager.get(); }
-LandRegistry*       PLand::getLandRegistry() const { return mImpl->mLandRegistry.get(); }
+LandRegistry&       PLand::getLandRegistry() const { return *mImpl->mLandRegistry; }
 DrawHandleManager*  PLand::getDrawHandleManager() const { return mImpl->mDrawHandleManager.get(); }
 
 ll::thread::ThreadPoolExecutor* PLand::getThreadPool() const { return mImpl->mThreadPoolExecutor.get(); }

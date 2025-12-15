@@ -22,7 +22,7 @@ Land::Land(LandAABB const& pos, LandDimid dimid, bool is3D, mce::UUID const& own
     mContext.mLandDimid     = dimid;
     mContext.mIs3DLand      = is3D;
     mContext.mLandOwner     = owner.asString();
-    mContext.mLandPermTable = PLand::getInstance().getLandRegistry()->getLandTemplatePermTable().get();
+    mContext.mLandPermTable = PLand::getInstance().getLandRegistry().getLandTemplatePermTable().get();
 
     _initCache();
 }
@@ -42,7 +42,7 @@ void Land::_initCache() {
 }
 
 SharedLand Land::getSelfFromRegistry() const {
-    return PLand::getInstance().getLandRegistry()->getLand(mContext.mLandID);
+    return PLand::getInstance().getLandRegistry().getLand(mContext.mLandID);
 }
 
 LandAABB const& Land::getAABB() const { return mContext.mPos; }
@@ -170,14 +170,14 @@ SharedLand Land::getParentLand() const {
     if (isParentLand() || !hasParentLand()) {
         return nullptr;
     }
-    return PLand::getInstance().getLandRegistry()->getLand(this->mContext.mParentLandID);
+    return PLand::getInstance().getLandRegistry().getLand(this->mContext.mParentLandID);
 }
 
 std::vector<SharedLand> Land::getSubLands() const {
     if (!hasSubLand()) {
         return {};
     }
-    return PLand::getInstance().getLandRegistry()->getLands(this->mContext.mSubLandIDs);
+    return PLand::getInstance().getLandRegistry().getLands(this->mContext.mSubLandIDs);
 }
 int Land::getNestedLevel() const {
     if (!hasParentLand()) {
@@ -313,7 +313,7 @@ void Land::load(nlohmann::json& json) {
 nlohmann::json Land::dump() const { return json_util::struct2json(mContext); }
 void           Land::save(bool force) {
     if (isDirty() || force) {
-        if (PLand::getInstance().getLandRegistry()->save(*this)) {
+        if (PLand::getInstance().getLandRegistry().save(*this)) {
             mDirtyCounter.reset();
         }
     }

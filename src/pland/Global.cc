@@ -16,7 +16,7 @@ std::string GetPlayerLocaleCodeFromSettings(Player& player) {
         return iter->second; // 命中缓存
     }
 
-    if (auto set = PLand::getInstance().getLandRegistry()->getPlayerSettings(uuid); set) {
+    if (auto set = PLand::getInstance().getLandRegistry().getPlayerSettings(uuid); set) {
         if (set->localeCode == PlayerSettings::SYSTEM_LOCALE_CODE()) {
             GlobalPlayerLocaleCodeCached[uuid] = player.getLocaleCode();
         } else if (set->localeCode == PlayerSettings::SERVER_LOCALE_CODE()) {
