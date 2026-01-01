@@ -24,7 +24,7 @@
 |  禁止区域  | 禁止在划定区域内创建领地 |  ✅  |
 |  DevTools  |   开发者工具，方便调试   |  ✅  |
 
-> 更多内容，请移步文档站：https://engsr6982.github.io/PLand/
+> 更多内容，请移步文档站：https://iceblcokmc.github.io/PLand/
 
 ## 工程结构
 
