@@ -1,11 +1,9 @@
 #pragma once
 #include "LandContext.h"
-#include "pland/infra/DirtyCounter.h"
 
 
 namespace land {
 
-class LandRegistry;
 
 class LandTemplatePermTable {
 public:
@@ -15,11 +13,13 @@ public:
 
     void set(LandPermTable const& permTable);
 
-private:
-    DirtyCounter  mDirtyCounter;
-    LandPermTable mTemplatePermTable;
+    bool isDirty() const;
+    void markDirty();
+    void resetDirty();
 
-    friend class LandRegistry;
+private:
+    std::atomic_bool mDirty{false};
+    LandPermTable    mTemplatePermTable;
 };
 
 

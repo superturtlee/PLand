@@ -1,12 +1,5 @@
 #include "LandRegistry.h"
 #include "LandCreateValidator.h"
-#include "fmt/core.h"
-#include "ll/api/data/KeyValueDB.h"
-#include "ll/api/i18n/I18n.h"
-#include "mc/platform/UUID.h"
-#include "mc/world/actor/player/Player.h"
-#include "mc/world/level/BlockPos.h"
-#include "nlohmann/json_fwd.hpp"
 #include "pland/Global.h"
 #include "pland/PLand.h"
 #include "pland/aabb/LandAABB.h"
@@ -15,11 +8,19 @@
 #include "pland/land/LandTemplatePermTable.h"
 #include "pland/utils/JsonUtil.h"
 
+#include "ll/api/data/KeyValueDB.h"
+#include "ll/api/i18n/I18n.h"
+
+#include "mc/platform/UUID.h"
+#include "mc/world/actor/player/Player.h"
+#include "mc/world/level/BlockPos.h"
+
+#include "nlohmann/json_fwd.hpp"
+
+#include "fmt/core.h"
+
 #include <algorithm>
 #include <chrono>
-#include <cstddef>
-#include <cstdint>
-#include <ctime>
 #include <expected>
 #include <filesystem>
 #include <memory>
@@ -243,9 +244,9 @@ void LandRegistry::save() {
 
     mDB->set(DbPlayerSettingDataKey, json_util::struct2json(mPlayerSettings).dump());
 
-    if (mLandTemplatePermTable->mDirtyCounter.isDirty()) {
-        if (mDB->set(DbTemplatePermKey, json_util::struct2json(mLandTemplatePermTable->mTemplatePermTable).dump())) {
-            mLandTemplatePermTable->mDirtyCounter.reset();
+    if (mLandTemplatePermTable->isDirty()) {
+        if (mDB->set(DbTemplatePermKey, json_util::struct2json(mLandTemplatePermTable->get()).dump())) {
+            mLandTemplatePermTable->resetDirty();
         }
     }
 

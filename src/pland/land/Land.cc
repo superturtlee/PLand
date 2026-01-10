@@ -125,13 +125,16 @@ void Land::setOriginalBuyPrice(int price) {
     mDirtyCounter.increment();
 }
 
-bool Land::is3D() const { return mContext.mIs3DLand; }
-bool Land::isOwner(mce::UUID const& uuid) const { return mCacheOwner == uuid; }
-bool Land::isMember(mce::UUID const& uuid) const { return mCacheMembers.contains(uuid); }
-bool Land::isConvertedLand() const { return mContext.mIsConvertedLand; }
-bool Land::isOwnerDataIsXUID() const { return mContext.mOwnerDataIsXUID; }
-bool Land::isDirty() const { return mDirtyCounter.isDirty(); }
-void Land::markDirty() { mDirtyCounter.increment(); }
+bool                Land::is3D() const { return mContext.mIs3DLand; }
+bool                Land::isOwner(mce::UUID const& uuid) const { return mCacheOwner == uuid; }
+bool                Land::isMember(mce::UUID const& uuid) const { return mCacheMembers.contains(uuid); }
+bool                Land::isConvertedLand() const { return mContext.mIsConvertedLand; }
+bool                Land::isOwnerDataIsXUID() const { return mContext.mOwnerDataIsXUID; }
+bool                Land::isDirty() const { return mDirtyCounter.isDirty(); }
+void                Land::markDirty() { mDirtyCounter.increment(); }
+void                Land::rollbackDirty() { mDirtyCounter.decrement(); }
+DirtyCounter&       Land::getDirtyCounter() { return mDirtyCounter; }
+DirtyCounter const& Land::getDirtyCounter() const { return mDirtyCounter; }
 
 Land::Type Land::getType() const {
     if (isOrdinaryLand()) [[likely]] {

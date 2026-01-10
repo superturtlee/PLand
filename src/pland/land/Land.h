@@ -135,9 +135,12 @@ public:
     LDNDAPI bool isDirty() const;
 
     /**
-     * @brief 标记数据为已修改
+     * @brief 标记数据为已修改(计数+1)
      */
-    LDAPI void markDirty();
+    LDAPI void                  markDirty();
+    LDAPI void                  rollbackDirty();
+    LDNDAPI DirtyCounter&       getDirtyCounter();
+    LDNDAPI DirtyCounter const& getDirtyCounter() const;
 
     /**
      * @brief 获取领地类型
