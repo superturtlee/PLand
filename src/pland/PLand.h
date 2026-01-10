@@ -47,12 +47,7 @@ public: /* public */
     [[nodiscard]] devtool::DevToolApp* getDevToolApp() const;
 #endif
 
-    LDNDAPI static ll::data::Version const& getVersion();
-
 private:
-    static void printLogo(ll::io::Logger& logger);
-    void        checkVersion(ll::io::Logger& logger);
-
     struct Impl;
     std::unique_ptr<Impl> mImpl{nullptr};
 };

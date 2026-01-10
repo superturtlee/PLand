@@ -6,13 +6,11 @@ add_repositories("miracleforest-repo https://github.com/MiracleForest/xmake-repo
 
 
 -- LeviMc(LiteLDev)
-local levilamina_version = "1.7.0"
-add_requires("levilamina " .. levilamina_version, {configs = {target_type = "server"}})
+add_requires("levilamina 1.7.0", {configs = {target_type = "server"}})
 add_requires("levibuildscript")
 
 -- MiracleForest
-local ilistenattentively_version = "0.10.0"
-add_requires("ilistenattentively " .. ilistenattentively_version)
+add_requires("ilistenattentively 0.10.0")
 
 -- xmake
 add_requires("exprtk 0.0.3")
@@ -39,15 +37,7 @@ option("devtool") -- 开发工具
     set_showmenu(true)
 option_end()
 
-
-rule("gen_version")
-    before_build(function(target)
-        import("scripts.gen_version")()
-    end)
-
-
-target("PLand") -- Change this to your mod name.
-    add_rules("gen_version")
+target("PLand")
     add_rules("@levibuildscript/linkrule")
     add_rules("@levibuildscript/modpacker")
     add_rules("plugin.compile_commands.autoupdate")
@@ -83,18 +73,14 @@ target("PLand") -- Change this to your mod name.
         "cpr"
     )
 
-    add_defines("LEVI_LAMINA_VERSION=\"" .. levilamina_version .. "\"")
-    add_defines("ILISTENATTENTIVELY_VERSION=\"" .. ilistenattentively_version .. "\"")
+    add_configfiles("src/BuildInfo.h.in")
+    set_configdir("src/pland")
 
     add_defines("PLUGIN_NAME=\"[PLand] \"")
 
     if is_mode("debug") then
         add_defines("DEBUG")
         -- add_defines("PLAND_I18N_COLLECT_STRINGS", "LL_I18N_COLLECT_STRINGS", "LL_I18N_COLLECT_STRINGS_CUSTOM")
-    end
-
-    if is_plat("windows") then
-        add_files("resource/Resource.rc")
     end
 
     if has_config("test") then

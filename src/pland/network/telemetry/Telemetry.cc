@@ -1,6 +1,6 @@
 #include "Telemetry.h"
 #include "bstats/Bukkit.h"
-#include "ll/api/utils/SystemUtils.h"
+#include "pland/BuildInfo.h"
 #include "pland/PLand.h"
 #include "pland/infra/Config.h"
 
@@ -11,6 +11,7 @@
 #include "ll/api/service/Bedrock.h"
 #include "ll/api/thread/ThreadPoolExecutor.h"
 #include "ll/api/utils/RandomUtils.h"
+#include "ll/api/utils/SystemUtils.h"
 
 
 #include "mc/common/BuildInfo.h"
@@ -156,7 +157,7 @@ struct Telemetry::Impl {
         mBody.osArch                = "amd64";
         mBody.coreCount             = std::thread::hardware_concurrency();
         mBody.onlineMode            = ll::service::getPropertiesSettings().value().mIsOnlineMode;
-        mBody.service.pluginVersion = PLand::getVersion().build;
+        mBody.service.pluginVersion = BuildInfo::Tag;
 
         mBody.osName    = ll::sys_utils::isWine() ? "Linux" : "Windows";
         mBody.osVersion = ll::sys_utils::getSystemVersion().to_string();

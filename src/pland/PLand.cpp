@@ -1,4 +1,5 @@
 #include "pland/PLand.h"
+#include "BuildInfo.h"
 
 #include <memory>
 
@@ -13,7 +14,6 @@
 #include "ll/api/utils/SystemUtils.h"
 
 #include "drawer/DrawHandleManager.h"
-#include "pland/Version.h"
 #include "pland/command/Command.h"
 #include "pland/economy/EconomySystem.h"
 #include "pland/events/ConfigReloadEvent.h"
@@ -59,9 +59,9 @@ struct PLand::Impl {
 
 bool PLand::load() {
     auto& logger = getSelf().getLogger();
-    printLogo(logger);
-    checkVersion(logger);
-
+    if (BuildInfo::Branch != "main") {
+        logger.warn("This is a development build. It may not be stable and may contain bugs.");
+    }
     if (auto res = ll::i18n::getInstance().load(getSelf().getLangDir()); !res) {
         logger.error("Load language file failed, plugin will use default language.");
         res.error().log(logger);
@@ -170,70 +170,6 @@ ll::thread::ThreadPoolExecutor* PLand::getThreadPool() const { return mImpl->mTh
 #ifdef LD_DEVTOOL
 devtool::DevToolApp* PLand::getDevToolApp() const { return mImpl->mDevToolApp.get(); }
 #endif
-
-ll::data::Version const& PLand::getVersion() {
-    static ll::data::Version version;
-    version.major = PLAND_VERSION_MAJOR;
-    version.minor = PLAND_VERSION_MINOR;
-    version.patch = PLAND_VERSION_PATCH;
-    version.build = PLAND_VERSION_STRING;
-    return version;
-}
-void PLand::printLogo(ll::io::Logger& logger) {
-    logger.info(R"(  _____   _                        _ )");
-    logger.info(R"( |  __ \ | |                      | |)");
-    logger.info(R"( | |__) || |      __ _  _ __    __| |)");
-    logger.info(R"( |  ___/ | |     / _` || '_ \  / _` |)");
-    logger.info(R"( | |     | |____| (_| || | | || (_| |)");
-    logger.info(R"( |_|     |______|\__,_||_| |_| \__,_|)");
-    logger.info(R"(                                     )");
-    logger.info("Loading...");
-}
-void PLand::checkVersion(ll::io::Logger& logger) {
-    if (PLAND_VERSION_SNAPSHOT) {
-        logger.warn("Version: {}", PLAND_VERSION_STRING);
-        logger.warn("您当前正在使用开发快照版本，此版本可能某些功能异常、损坏、甚至导致崩溃，请勿在生产环境中使用。");
-        logger.warn(
-            "You are using a development snapshot version, this version may have some abnormal, broken or even "
-            "crash functions, please do not use it in production environment."
-        );
-    } else {
-        logger.info("Version: {}", PLAND_VERSION_STRING);
-    }
-
-#ifdef LEVI_LAMINA_VERSION
-    logger.info("LeviLamina Version: {}", LEVI_LAMINA_VERSION);
-    auto const  semver    = ll::data::Version{LEVI_LAMINA_VERSION};
-    const auto& llVersion = ll::getLoaderVersion();
-    // 仅检查 major 和 minor 版本号
-    if (llVersion.major != semver.major || llVersion.minor != semver.minor) {
-        logger.warn(
-            "插件所依赖的 LeviLamina 版本 ({}) 与当前运行的版本 ({}) 不匹配。",
-            LEVI_LAMINA_VERSION,
-            llVersion.to_string()
-        );
-        logger.warn("这可能会让插件无法正常工作!建议使用与插件依赖版本相同的 LeviLamina 版本。");
-        logger.warn("这可能导致数据丢失或服务器不稳定。");
-        logger.warn("请谨慎使用，并随时准备好备份。");
-        logger.warn(
-            "The LeviLamina version ({}) that the plugin depends on does not match the currently running version ({}).",
-            LEVI_LAMINA_VERSION,
-            llVersion.to_string()
-        );
-        logger.warn("This may cause data loss or server instability.");
-        logger.warn("Please use with caution and be prepared to back up at any time.");
-    }
-#else
-    logger.info("LeviLamina Version: Unknown");
-#endif
-
-#ifdef ILISTENATTENTIVELY_VERSION
-    logger.info("iListenAttentively Version: {}", ILISTENATTENTIVELY_VERSION);
-#else
-    logger.info("iListenAttentively Version: Unknown");
-#endif
-}
-
 
 } // namespace land
 
