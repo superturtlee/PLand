@@ -1,13 +1,15 @@
 #include "NewLandGUI.h"
+
 #include "ll/api/event/EventBus.h"
 #include "ll/api/form/CustomForm.h"
 #include "ll/api/form/FormBase.h"
 #include "ll/api/form/ModalForm.h"
+
 #include "mc/world/actor/player/Player.h"
+
 #include "pland/Global.h"
 #include "pland/PLand.h"
 #include "pland/aabb/LandAABB.h"
-#include "pland/gui/CommonUtilGUI.h"
 #include "pland/infra/Config.h"
 #include "pland/land/Land.h"
 #include "pland/land/LandEvent.h"
@@ -16,7 +18,7 @@
 #include "pland/selector/SelectorManager.h"
 #include "pland/selector/SubLandSelector.h"
 #include "pland/utils/McUtils.h"
-#include "pland/utils/Utils.h"
+
 #include <string>
 
 
@@ -27,7 +29,7 @@ namespace land {
 
 
 void NewLandGUI::sendChooseLandDim(Player& player) {
-    if (!some(Config::cfg.land.bought.allowDimensions, player.getDimensionId().id)) {
+    if (!std::ranges::contains(Config::cfg.land.bought.allowDimensions, player.getDimensionId().id)) {
         mc_utils::sendText(player, "你所在的维度无法购买领地"_trf(player));
         return;
     }
@@ -112,14 +114,13 @@ void NewLandGUI::sendConfirmPrecinctsYRange(Player& player, std::string const& e
         std::string start = std::get<std::string>(res->at("start"));
         std::string end   = std::get<std::string>(res->at("end"));
 
-        if (!isNumber(start) || !isNumber(end) || isOutOfRange(start) || isOutOfRange(end)) {
-            sendConfirmPrecinctsYRange(pl, "请输入正确的Y轴范围"_trf(pl));
-            return;
-        }
-
         try {
-            int startY = std::stoi(start);
-            int endY   = std::stoi(end);
+            int64_t startY = std::stoll(start);
+            int64_t endY   = std::stoll(end);
+            if (startY >= INT32_MAX || startY <= INT32_MIN || endY >= INT32_MAX || endY <= INT32_MIN) {
+                sendConfirmPrecinctsYRange(pl, "数值过大，请输入正确的Y轴范围"_trf(pl));
+                return;
+            }
 
             if (startY >= endY) {
                 sendConfirmPrecinctsYRange(pl, "请输入正确的Y轴范围, 开始Y轴必须小于结束Y轴"_trf(pl));
@@ -141,14 +142,7 @@ void NewLandGUI::sendConfirmPrecinctsYRange(Player& player, std::string const& e
             selector->setYRange(startY, endY);
             selector->onPointConfirmed();
         } catch (...) {
-            mc_utils::sendText<mc_utils::LogLevel::Fatal>(pl, "插件内部错误, 请联系开发者"_trf(pl));
-            land::PLand::getInstance().getSelf().getLogger().error(
-                "An exception is caught in {} and user {} enters data: {}, {}",
-                __FUNCTION__,
-                pl.getRealName(),
-                start,
-                end
-            );
+            sendConfirmPrecinctsYRange(pl, "处理失败,请输入正确的Y轴范围"_trf(pl));
         }
     });
 }
