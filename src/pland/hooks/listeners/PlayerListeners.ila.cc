@@ -99,8 +99,8 @@ void EventListener::registerILAPlayerListeners() {
                     return;
                 }
 
-                if (land->getPermTable().useDecorative) {
-                    EVENT_TRACE("ArmorStandSwapItemEvent", EVENT_TRACE_PASS, "useDecorative allowed");
+                if (land->getPermTable().useArmorStand) {
+                    EVENT_TRACE("ArmorStandSwapItemEvent", EVENT_TRACE_PASS, "useArmorStand allowed");
                     return;
                 }
 
@@ -154,8 +154,8 @@ void EventListener::registerILAPlayerListeners() {
                     return;
                 }
 
-                if (land->getPermTable().useDecorative) {
-                    EVENT_TRACE("PlayerUseItemFrameEvent", EVENT_TRACE_PASS, "useDecorative allowed");
+                if (land->getPermTable().useItemFrame) {
+                    EVENT_TRACE("PlayerUseItemFrameEvent", EVENT_TRACE_PASS, "useItemFrame allowed");
                     return;
                 }
 
@@ -185,9 +185,9 @@ void EventListener::registerILAPlayerListeners() {
                     return;
                 }
 
-                if (!land->getPermTable().editSigns) {
+                if (!land->getPermTable().editSign) {
                     ev.cancel();
-                    EVENT_TRACE("PlayerEditSignEvent", EVENT_TRACE_CANCEL, "editSigns denied");
+                    EVENT_TRACE("PlayerEditSignEvent", EVENT_TRACE_CANCEL, "editSign denied");
                 }
             }
         );

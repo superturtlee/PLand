@@ -142,53 +142,13 @@ SharedLand iLandConverter::convert(RawData::iLand const& raw, std::string const&
         tab.allowPistonPushOnBoundary = raw.settings.ev_piston_push;
         tab.allowFireSpread           = raw.settings.ev_fire_spread;
         tab.allowRedstoneUpdate       = raw.settings.ev_redstone_update;
-        // permissions - 映射到新的分组权限
-        auto& p = raw.permissions;
-
-        // 基础权限
-        tab.allowDestroy  = p.allow_destroy;
-        tab.allowPlace    = p.allow_place;
-        tab.allowInteract = p.allow_open_chest; // 使用开箱子权限作为基础交互权限
-
-        // 战斗权限
-        tab.allowPlayerDamage  = p.allow_attack_player;
-        tab.allowMonsterDamage = p.allow_attack_mobs;
-
-        // 物品权限
-        tab.allowDropItem          = p.allow_dropitem;
-        tab.allowPickupItem        = p.allow_pickupitem;
-        tab.allowFishingRodAndHook = p.use_fishing_hook;
-
-        // 实体权限
-        tab.allowRideEntity = p.allow_ride_entity;
-
-        // 工具权限 - 合并相关工具
-        tab.useTools  = p.use_firegen; // 使用打火石作为工具权限代表
-        tab.useBucket = p.use_bucket;
-
-        // 功能方块权限 - 合并相关方块
-        tab.useFurnaces       = p.use_furnace || p.use_blast_furnace || p.use_smoker;
-        tab.useCraftingBlocks = p.use_crafting_table || p.use_anvil || p.use_enchanting_table || p.use_grindstone
-                             || p.use_smithing_table || p.use_cartography_table || p.use_loom || p.use_stonecutter
-                             || p.use_brewing_stand;
-        tab.useStorageBlocks = p.allow_open_chest || p.use_barrel || p.use_hopper || p.use_shulker_box;
-        tab.useRedstoneBlocks =
-            p.use_dispenser || p.use_dropper || p.use_daylight_detector || p.use_lever || p.use_button;
-        tab.useUtilityBlocks = p.use_beacon || p.use_lectern || p.use_cauldron || p.use_respawn_anchor
-                            || p.use_composter || p.use_campfire;
-
-        // 装饰交互权限
-        tab.useDecorative = p.use_noteblock || p.use_jukebox || p.use_item_frame || p.use_armor_stand || p.use_bell;
-        tab.useMovement   = p.use_door || p.use_trapdoor || p.use_fence_gate || p.use_pressure_plate;
-        tab.editFlowerPot = false; // 新权限，默认为false
-
-        // 特殊权限
-        tab.useBed        = p.use_bed;
-        tab.placeVehicles = p.allow_ride_trans; // 使用骑乘载具权限作为放置载具权限
-
-        // 保留旧权限用于兼容性
+        // permissions
+        auto& p                 = raw.permissions;
         tab.useDispenser        = p.use_dispenser;
         tab.useDoor             = p.use_door;
+        tab.allowDropItem       = p.allow_dropitem;
+        tab.allowPickupItem     = p.allow_pickupitem;
+        tab.allowPlace          = p.allow_place;
         tab.useFenceGate        = p.use_fence_gate;
         tab.usePressurePlate    = p.use_pressure_plate;
         tab.useBlastFurnace     = p.use_blast_furnace;
@@ -199,32 +159,40 @@ SharedLand iLandConverter::convert(RawData::iLand const& raw, std::string const&
         tab.useStonecutter      = p.use_stonecutter;
         tab.useBeacon           = p.use_beacon;
         tab.useDaylightDetector = p.use_daylight_detector;
-        tab.useLectern          = p.use_lectern;
-        tab.useEnchantingTable  = p.use_enchanting_table;
-        tab.useAnvil            = p.use_anvil;
-        tab.useLever            = p.use_lever;
-        tab.useButton           = p.use_button;
-        tab.useComposter        = p.use_composter;
-        tab.useSmithingTable    = p.use_smithing_table;
-        tab.useNoteBlock        = p.use_noteblock;
-        tab.useGrindstone       = p.use_grindstone;
-        tab.useHopper           = p.use_hopper;
-        tab.useSmoker           = p.use_smoker;
-        tab.useRespawnAnchor    = p.use_respawn_anchor;
-        tab.useJukebox          = p.use_jukebox;
-        tab.useShulkerBox       = p.use_shulker_box;
-        tab.allowOpenChest      = p.allow_open_chest;
-        tab.useItemFrame        = p.use_item_frame;
-        tab.useBrewingStand     = p.use_brewing_stand;
-        tab.useLoom             = p.use_loom;
-        tab.useTrapdoor         = p.use_trapdoor;
-        tab.useCraftingTable    = p.use_crafting_table;
-        tab.useArmorStand       = p.use_armor_stand;
-        tab.allowRideTrans      = p.allow_ride_trans;
-        tab.useDropper          = p.use_dropper;
-        tab.useCauldron         = p.use_cauldron;
-        tab.useCartographyTable = p.use_cartography_table;
-        tab.useBell             = p.use_bell;
+        tab.allowPlayerDamage   = p.allow_attack_player;
+        // tab.allowDestroy        = p.allow_entity_destroy; // allow_destroy
+        tab.useLectern             = p.use_lectern;
+        tab.useEnchantingTable     = p.use_enchanting_table;
+        tab.allowFishingRodAndHook = p.use_fishing_hook;
+        tab.useAnvil               = p.use_anvil;
+        tab.useLever               = p.use_lever;
+        tab.useButton              = p.use_button;
+        tab.allowMonsterDamage     = p.allow_attack_mobs;
+        tab.useComposter           = p.use_composter;
+        tab.allowRideEntity        = p.allow_ride_entity;
+        tab.useSmithingTable       = p.use_smithing_table;
+        tab.useNoteBlock           = p.use_noteblock;
+        tab.useGrindstone          = p.use_grindstone;
+        tab.useBucket              = p.use_bucket;
+        tab.allowDestroy           = p.allow_destroy;
+        tab.useHopper              = p.use_hopper;
+        tab.useSmoker              = p.use_smoker;
+        tab.useRespawnAnchor       = p.use_respawn_anchor;
+        tab.useJukebox             = p.use_jukebox;
+        tab.useShulkerBox          = p.use_shulker_box;
+        tab.allowOpenChest         = p.allow_open_chest;
+        tab.useBed                 = p.use_bed;
+        tab.useItemFrame           = p.use_item_frame;
+        tab.useBrewingStand        = p.use_brewing_stand;
+        tab.useLoom                = p.use_loom;
+        tab.useTrapdoor            = p.use_trapdoor;
+        tab.useCraftingTable       = p.use_crafting_table;
+        tab.useArmorStand          = p.use_armor_stand;
+        tab.allowRideTrans         = p.allow_ride_trans;
+        tab.useDropper             = p.use_dropper;
+        tab.useCauldron            = p.use_cauldron;
+        tab.useCartographyTable    = p.use_cartography_table;
+        tab.useBell                = p.use_bell;
     }
 
     return Land::make(std::move(ctx));
