@@ -4,22 +4,27 @@
 
 namespace land {
 
+LandPos&       LandAABB::getMin() { return min; }
 LandPos const& LandAABB::getMin() const { return min; }
+LandPos&       LandAABB::getMax() { return max; }
 LandPos const& LandAABB::getMax() const { return max; }
 
-int   LandAABB::getDepth() const { return max.x - min.x; }
-int   LandAABB::getHeight() const { return max.y - min.y; }
-int   LandAABB::getWidth() const { return max.z - min.z; }
+int   LandAABB::getSpanX() const { return max.x - min.x; }
+int   LandAABB::getSpanZ() const { return max.y - min.y; }
+int   LandAABB::getSpanY() const { return max.z - min.z; }
+int   LandAABB::getBlockCountX() const { return getSpanX() + 1; }
+int   LandAABB::getBlockCountY() const { return getSpanY() + 1; }
+int   LandAABB::getBlockCountZ() const { return getSpanZ() + 1; }
 llong LandAABB::getSquare() const {
-    llong depth  = getDepth();
-    llong width  = getWidth();
-    llong square = depth * width;
+    llong x      = getBlockCountX();
+    llong z      = getBlockCountZ();
+    llong square = x * z;
     return square;
 }
 llong LandAABB::getVolume() const {
     llong square = getSquare();
-    llong height = getHeight();
-    llong volume = square * height;
+    llong y      = getBlockCountY();
+    llong volume = square * y;
     return volume;
 }
 

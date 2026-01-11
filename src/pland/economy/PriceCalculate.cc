@@ -16,9 +16,9 @@ PriceCalculate::Variable::Impl const& PriceCalculate::Variable::get() const { re
 
 PriceCalculate::Variable PriceCalculate::Variable::make(LandAABB const& landPos, int dimensionId) {
     Variable result;
-    result["height"]      = landPos.getHeight();
-    result["width"]       = landPos.getWidth();
-    result["depth"]       = landPos.getDepth();
+    result["height"]      = landPos.getBlockCountY();
+    result["width"]       = landPos.getBlockCountZ();
+    result["depth"]       = landPos.getBlockCountX();
     result["square"]      = static_cast<double>(landPos.getSquare());
     result["volume"]      = static_cast<double>(landPos.getVolume());
     result["dimensionId"] = static_cast<double>(dimensionId);

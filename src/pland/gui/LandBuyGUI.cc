@@ -57,9 +57,6 @@ void LandBuyGUI::impl(Player& player, DefaultSelector* selector) {
 
     aabb->fix();
     auto const volume = aabb->getVolume();
-    int const  length = aabb->getDepth();
-    int const  width  = aabb->getWidth();
-    int const  height = aabb->getHeight();
 
     auto   _variables    = PriceCalculate::Variable::make(*aabb, selector->getDimensionId()); // 传入维度ID
     double originalPrice = PriceCalculate::eval(
@@ -93,9 +90,9 @@ void LandBuyGUI::impl(Player& player, DefaultSelector* selector) {
         "领地类型: {}\n体积: {}x{}x{} = {}\n范围: {}\n原价: {}\n折扣价: {}\n{}"_trf(
             player,
             is3D ? "3D" : "2D",
-            length,
-            width,
-            height,
+            aabb->getBlockCountX(),
+            aabb->getBlockCountZ(),
+            aabb->getBlockCountY(),
             volume,
             aabb->toString(),
             originalPrice,
@@ -160,9 +157,6 @@ void LandBuyGUI::impl(Player& player, ChangeLandRangeSelector* reSelector) {
 
     aabb->fix();
     auto const volume = aabb->getVolume();
-    int const  length = aabb->getDepth();
-    int const  width  = aabb->getWidth();
-    int const  height = aabb->getHeight();
 
     auto       landPtr       = reSelector->getLand();
     int const& originalPrice = landPtr->getOriginalBuyPrice(); // 原始购买价格
@@ -199,9 +193,9 @@ void LandBuyGUI::impl(Player& player, ChangeLandRangeSelector* reSelector) {
     fm.setContent(
         "体积: {0}x{1}x{2} = {3}\n范围: {4}\n原购买价格: {5}\n需补差价: {6}\n需退差价: {7}\n{8}"_trf(
             player,
-            length,                    // 1
-            width,                     // 2
-            height,                    // 3
+            aabb->getBlockCountX(),
+            aabb->getBlockCountZ(),
+            aabb->getBlockCountY(),
             volume,                    // 4
             aabb->toString(),          // 5
             originalPrice,             // 6
@@ -271,9 +265,6 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
 
     subLandRange->fix();
     auto const volume = subLandRange->getVolume();
-    int const  length = subLandRange->getDepth();
-    int const  width  = subLandRange->getWidth();
-    int const  height = subLandRange->getHeight();
 
     auto   _variables    = PriceCalculate::Variable::make(*subLandRange, subSelector->getDimensionId()); // 传入维度ID
     double originalPrice = PriceCalculate::eval(Config::cfg.land.subLand.calculate, _variables);
@@ -306,15 +297,15 @@ void LandBuyGUI::impl(Player& player, SubLandSelector* subSelector) {
         "[父领地]\n体积: {}x{}x{}={}\n范围: {}\n\n[子领地]\n体积: {}x{}x{}={}\n范围: {}\n\n[价格]\n原价: {}\n折扣价: {}\n{}"_trf(
             player,
             // 父领地
-            parentPos.getDepth(),
-            parentPos.getWidth(),
-            parentPos.getHeight(),
+            parentPos.getBlockCountX(),
+            parentPos.getBlockCountZ(),
+            parentPos.getBlockCountY(),
             parentPos.getVolume(),
             parentPos.toString(),
             // 子领地
-            length,
-            width,
-            height,
+            subLandRange->getBlockCountX(),
+            subLandRange->getBlockCountZ(),
+            subLandRange->getBlockCountY(),
             volume,
             subLandRange->toString(),
             // 价格

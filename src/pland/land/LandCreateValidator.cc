@@ -83,9 +83,9 @@ ll::Expected<> LandCreateValidator::isLandInForbiddenRange(LandAABB const& range
 ll::Expected<> LandCreateValidator::isLandRangeLegal(LandAABB const& range, LandDimid dimid, bool is3D) {
     auto const& squareRange = Config::cfg.land.bought.squareRange;
 
-    auto const length = range.getDepth();
-    auto const width  = range.getWidth();
-    auto const height = range.getHeight();
+    auto const length = range.getBlockCountX();
+    auto const width  = range.getBlockCountZ();
+    auto const height = range.getBlockCountY();
 
     auto dimension = ll::service::getLevel()->getDimension(dimid).lock();
     if (!dimension) {

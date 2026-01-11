@@ -65,9 +65,9 @@ void LandManagerGUI::sendMainMenu(Player& player, SharedLand land) {
             player,
             land->getName(),
             land->is3D() ? "3D" : "2D",
-            land->getAABB().getDepth(),
-            land->getAABB().getWidth(),
-            land->getAABB().getHeight(),
+            land->getAABB().getBlockCountX(),
+            land->getAABB().getBlockCountZ(),
+            land->getAABB().getBlockCountY(),
             land->getAABB().getVolume(),
             land->getAABB().toString(),
             subContent

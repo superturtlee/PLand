@@ -17,25 +17,31 @@ public:
 
     LDAPI void fix(); // fix min/max
 
+    LDNDAPI LandPos&       getMin();
     LDNDAPI LandPos const& getMin() const;
+    LDNDAPI LandPos&       getMax();
     LDNDAPI LandPos const& getMax() const;
 
-    /**
-     * @brief 获取AABB体积深度(X轴)
-     */
-    LDNDAPI int getDepth() const;
+    LDNDAPI int getSpanX() const; // X 轴坐标跨度 (depth)
+    LDNDAPI int getSpanZ() const; // Z 轴坐标跨度 (width)
+    LDNDAPI int getSpanY() const; // Y 轴坐标跨度 (height)
+
+    // AABB 区域内各轴包含的方块数量
+    LDAPI int getBlockCountX() const;
+    LDAPI int getBlockCountY() const;
+    LDAPI int getBlockCountZ() const;
 
     /**
-     * @brief 获取AABB高度(Y轴)
+     * @brief 获取AABB底面积（X-Z平面方块总数）
+     * @note 基于 getBlockCountX() * getBlockCountZ()
      */
-    LDNDAPI int getHeight() const;
+    LDNDAPI llong getSquare() const;
 
     /**
-     * @brief 获取AABB宽度(Z轴)
+     * @brief 获取AABB总体积（总方块数）
+     * @note 基于 getBlockCountX() * getBlockCountZ() * getBlockCountY()
      */
-    LDNDAPI int   getWidth() const;
-    LDNDAPI llong getSquare() const; // (底面积) X * Z
-    LDNDAPI llong getVolume() const; // (总体积) Z * X * Y
+    LDNDAPI llong getVolume() const;
 
     LDNDAPI std::string toString() const;
 
