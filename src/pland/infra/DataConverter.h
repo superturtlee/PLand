@@ -32,9 +32,6 @@ public:
 
     void writeToDb(std::vector<SharedLand> const& data);
 
-    template <typename... Args>
-    void printProgress(size_t progress, size_t total, fmt::format_string<Args...> fmt, Args&&... args);
-
     virtual bool execute() = 0;
 };
 

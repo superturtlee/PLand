@@ -63,47 +63,6 @@ void DataConverter::writeToDb(std::vector<SharedLand> const& data) {
     }
 }
 
-template <typename... Args>
-void DataConverter::printProgress(size_t progress, size_t total, fmt::format_string<Args...> fmt, Args&&... args) {
-    static constexpr size_t MAX_MESSAGE_LENGTH = 100;
-    static constexpr size_t ELLIPSIS_LENGTH    = 3;
-    static const char*      bars[]             = {"/", "-", "\\", "|"};
-    static size_t           barIndex           = 0;
-
-    std::string message = fmt::vformat(fmt.get(), fmt::make_format_args(args...));
-    // 安全的UTF-8字符串截断
-    if (message.length() > MAX_MESSAGE_LENGTH) {
-        size_t len   = 0;
-        size_t bytes = 0;
-        while (bytes < message.length()) {
-            unsigned char c = message[bytes];
-            if ((c & 0x80) == 0) {
-                bytes += 1;
-            } else if ((c & 0xE0) == 0xC0) {
-                bytes += 2;
-            } else if ((c & 0xF0) == 0xE0) {
-                bytes += 3;
-            } else if ((c & 0xF8) == 0xF0) {
-                bytes += 4;
-            } else {
-                // 无效的UTF-8序列
-                bytes += 1;
-            }
-
-            if (len + 1 > MAX_MESSAGE_LENGTH - ELLIPSIS_LENGTH) {
-                break;
-            }
-            len++;
-        }
-        message = message.substr(0, bytes) + "...";
-    }
-
-    fmt::println("\r{} [{} / {}] {}", bars[barIndex++ % 4], progress, total, message);
-    printf("\033[A");
-    printf("\033[K");
-}
-
-
 // iLandConverter
 iLandConverter::iLandConverter(const std::string& relationShipPath, const std::string& dataPath, bool clear_db)
 : DataConverter{clear_db},
@@ -120,7 +79,7 @@ SharedLand iLandConverter::convert(RawData::iLand const& raw, std::string const&
         ctx.mPos.max  = LandPos{rawPosB[0], rawPosB[1], rawPosB[2]};
         ctx.mPos.fix();
         ctx.mLandDimid = raw.range.dimid;
-        ctx.mIs3DLand  = true; // TODO: 由于iLand没有3D数据，所以这里暂时默认为true
+        ctx.mIs3DLand  = true; // 由于iLand没有3D数据，所以这里默认为true
     }
 
     // base info
@@ -128,7 +87,7 @@ SharedLand iLandConverter::convert(RawData::iLand const& raw, std::string const&
         ctx.mIsConvertedLand = true;
         ctx.mOwnerDataIsXUID = !uuids.has_value();
         ctx.mLandOwner       = uuids.has_value() ? uuids->asString() : xuid;
-        // ctx.mLandMembers = raw.settings.share; // TODO
+        // ctx.mLandMembers = raw.settings.share;
         ctx.mLandName     = raw.settings.nickname;
         ctx.mLandDescribe = raw.settings.describe;
     }
@@ -229,22 +188,11 @@ bool iLandConverter::execute() {
         auto name = info ? info->name : xuid;
 
         for (auto& land : lands) {
-            printProgress(progress++, total, "Converting player \"{}\"'s land \"{}\"", name, land);
-
             auto iter = data.find(land);
             if (iter == data.end()) {
                 logger.warn("No land '{}' data owned by player '{}' was found", land, name);
                 continue;
             }
-
-            // 刷新领地名称
-            printProgress(
-                progress,
-                total,
-                "Converting player \"{}\"'s land \"{}\"",
-                name,
-                iter->second.settings.nickname
-            );
 
             // 转换数据
             SharedLand landData;
