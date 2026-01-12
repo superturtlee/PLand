@@ -29,8 +29,8 @@ public:
     LDAPI virtual ~ISelector();
 
 public:
-    LDNDAPI Player*   getPlayer() const;
-    LDNDAPI LandDimid getDimensionId() const;
+    LDNDAPI optional_ref<Player> getPlayer() const;
+    LDNDAPI LandDimid            getDimensionId() const;
     LDNDAPI std::optional<BlockPos> getPointA() const;
     LDNDAPI std::optional<BlockPos> getPointB() const;
 

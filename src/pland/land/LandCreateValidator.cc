@@ -3,6 +3,7 @@
 #include "pland/aabb/LandAABB.h"
 #include "pland/infra/Config.h"
 #include "pland/land/LandRegistry.h"
+#include "pland/utils/FeedbackUtils.h"
 #include "pland/utils/McUtils.h"
 
 #include "ll/api/service/Bedrock.h"
@@ -12,6 +13,7 @@
 #include "mc/world/level/dimension/DimensionHeightRange.h"
 
 #include "nonstd/expected.hpp"
+
 
 namespace land {
 
@@ -202,7 +204,7 @@ std::string LandCreateValidator::ValidateError::message() const noexcept {
     return "Land Create Validator Error: {}"_tr(magic_enum::enum_name(code));
 }
 void LandCreateValidator::ValidateError::sendTo(Player& player) const {
-    mc_utils::sendText<mc_utils::LogLevel::Error>(player, translateError(player.getLocaleCode()));
+    feedback_utils::sendErrorText(player, translateError(player.getLocaleCode()));
 }
 using ll::operator""_trl;
 std::string LandCreateValidator::ValidateError::translateError(std::string const& localeCode) const {

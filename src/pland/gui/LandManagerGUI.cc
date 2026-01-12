@@ -26,6 +26,7 @@
 #include "pland/land/StorageError.h"
 #include "pland/selector/ChangeLandRangeSelector.h"
 #include "pland/selector/SelectorManager.h"
+#include "pland/utils/FeedbackUtils.h"
 #include "pland/utils/McUtils.h"
 #include <cstdint>
 #include <stack>
@@ -98,7 +99,7 @@ void LandManagerGUI::sendMainMenu(Player& player, SharedLand land) {
         if (land->getAABB().hasPos(player.getPosition())) {
             fm.appendButton("设置传送点"_trf(player), "textures/ui/Add-Ons_Nav_Icon36x36", "path", [land](Player& pl) {
                 land->setTeleportPos(LandPos::make(pl.getPosition()));
-                mc_utils::sendText(pl, "领地传送点已设置!"_trf(pl));
+                feedback_utils::sendText(pl, "领地传送点已设置!"_trf(pl));
             });
         }
     }
@@ -123,7 +124,7 @@ void LandManagerGUI::sendMainMenu(Player& player, SharedLand land) {
 void LandManagerGUI::sendEditLandPermGUI(Player& player, SharedLand const& ptr) {
     EditLandPermTableUtilGUI::sendTo(player, ptr->getPermTable(), [ptr](Player& self, LandPermTable newTable) {
         ptr->setPermTable(newTable);
-        mc_utils::sendText(self, "权限表已更新"_trf(self));
+        feedback_utils::sendText(self, "权限表已更新"_trf(self));
     });
 }
 
@@ -332,7 +333,7 @@ void LandManagerGUI::sendEditLandNameGUI(Player& player, SharedLand const& ptr) 
         ptr->getName(),
         [ptr](Player& pl, std::string result) {
             ptr->setName(result);
-            mc_utils::sendText(pl, "领地名称已更新!"_trf(pl));
+            feedback_utils::sendText(pl, "领地名称已更新!"_trf(pl));
         }
     );
 }
@@ -344,7 +345,7 @@ void LandManagerGUI::sendEditLandDescGUI(Player& player, SharedLand const& ptr) 
         ptr->getDescribe(),
         [ptr](Player& pl, std::string result) {
             ptr->setDescribe(result);
-            mc_utils::sendText(pl, "领地描述已更新!"_trf(pl));
+            feedback_utils::sendText(pl, "领地描述已更新!"_trf(pl));
         }
     );
 }
@@ -359,7 +360,7 @@ void LandManagerGUI::sendTransferLandGUI(Player& player, SharedLand const& ptr) 
         [ptr](Player& self) {
             ChooseOnlinePlayerUtilGUI::sendTo(self, [ptr](Player& self, Player& target) {
                 if (self.getUuid() == target.getUuid()) {
-                    mc_utils::sendText(self, "不能将领地转让给自己, 左手倒右手哦!"_trf(self));
+                    feedback_utils::sendErrorText(self, "不能将领地转让给自己, 左手倒右手哦!"_trf(self));
                     return;
                 }
 
@@ -368,7 +369,7 @@ void LandManagerGUI::sendTransferLandGUI(Player& player, SharedLand const& ptr) 
                         auto& error = res.error().as<LandCreateValidator::ValidateError>();
                         error.sendTo(self);
                     } else {
-                        mc_utils::sendText<mc_utils::LogLevel::Error>(self, "插件异常，无法处理此请求"_trf(self));
+                        feedback_utils::sendErrorText(self, "插件异常，无法处理此请求"_trf(self));
                     }
                     return;
                 }
@@ -396,10 +397,7 @@ void LandManagerGUI::sendTransferLandGUI(Player& player, SharedLand const& ptr) 
                         }
                         Player* target = weak.tryUnwrap<Player>();
                         if (!target) {
-                            mc_utils::sendText<mc_utils::LogLevel::Error>(
-                                self,
-                                "目标玩家已离线，无法继续操作!"_trf(self)
-                            );
+                            feedback_utils::sendErrorText(self, "目标玩家已离线，无法继续操作!"_trf(self));
                             return;
                         }
 
@@ -410,9 +408,9 @@ void LandManagerGUI::sendTransferLandGUI(Player& player, SharedLand const& ptr) 
 
                         ptr->setOwner(target->getUuid());
 
-                        mc_utils::sendText(self, "领地已转让给 {}"_trf(self, target->getRealName()));
-                        mc_utils::sendText(
-                            target,
+                        feedback_utils::sendText(self, "领地已转让给 {}"_trf(self, target->getRealName()));
+                        feedback_utils::sendText(
+                            *target,
                             "您已成功接手来自 \"{}\" 的领地 \"{}\""_trf(self, self.getRealName(), ptr->getName())
                         );
 
@@ -443,14 +441,14 @@ void LandManagerGUI::_sendTransferLandToOfflinePlayerGUI(Player& player, SharedL
         }
         auto playerName = std::get<std::string>(res->at("playerName"));
         if (playerName.empty()) {
-            mc_utils::sendText<mc_utils::LogLevel::Error>(self, "玩家名称不能为空!"_trf(self));
+            feedback_utils::sendErrorText(self, "玩家名称不能为空!"_trf(self));
             sendTransferLandGUI(self, ptr);
             return;
         }
 
         auto playerInfo = ll::service::PlayerInfo::getInstance().fromName(playerName);
         if (!playerInfo) {
-            mc_utils::sendText<mc_utils::LogLevel::Error>(self, "未找到该玩家信息，请检查名称是否正确!"_trf(self));
+            feedback_utils::sendErrorText(self, "未找到该玩家信息，请检查名称是否正确!"_trf(self));
             sendTransferLandGUI(self, ptr);
             return;
         }
@@ -458,7 +456,7 @@ void LandManagerGUI::_sendTransferLandToOfflinePlayerGUI(Player& player, SharedL
         auto& targetUuid = playerInfo->uuid;
 
         if (self.getUuid() == targetUuid) {
-            mc_utils::sendText(self, "不能将领地转让给自己, 左手倒右手哦!"_trf(self));
+            feedback_utils::sendErrorText(self, "不能将领地转让给自己, 左手倒右手哦!"_trf(self));
             sendTransferLandGUI(self, ptr);
             return;
         }
@@ -468,7 +466,7 @@ void LandManagerGUI::_sendTransferLandToOfflinePlayerGUI(Player& player, SharedL
                 auto& error = res.error().as<LandCreateValidator::ValidateError>();
                 error.sendTo(self);
             } else {
-                mc_utils::sendText<mc_utils::LogLevel::Error>(self, "插件异常，无法处理此请求"_trf(self));
+                feedback_utils::sendErrorText(self, "插件异常，无法处理此请求"_trf(self));
             }
             return;
         }
@@ -501,9 +499,9 @@ void LandManagerGUI::_sendTransferLandToOfflinePlayerGUI(Player& player, SharedL
 
                 ptr->setOwner(targetUuid);
 
-                mc_utils::sendText(self, "领地已转让给 {}"_trf(self, playerName));
+                feedback_utils::sendText(self, "领地已转让给 {}"_trf(self, playerName));
                 // 离线玩家无法发送消息，所以只给操作者发送消息
-                // mc_utils::sendText(
+                // feedback_utils::sendText(
                 //     target,
                 //     "您已成功接手来自 \"{}\" 的领地 \"{}\""_trf(self, self.getRealName(), ptr->getName())
                 // );
@@ -536,7 +534,7 @@ void LandManagerGUI::sendChangLandRangeGUI(Player& player, SharedLand const& ptr
 
         auto manager = land::PLand::getInstance().getSelectorManager();
         if (manager->hasSelector(self.getUuid())) {
-            mc_utils::sendText<mc_utils::LogLevel::Error>(self, "选区开启失败，当前存在未完成的选区任务"_trf(self));
+            feedback_utils::sendErrorText(self, "选区开启失败，当前存在未完成的选区任务"_trf(self));
             return;
         }
 
@@ -572,7 +570,7 @@ void LandManagerGUI::_sendAddMemberGUI(Player& player, SharedLand ptr) {
         [ptr](Player& self, Player& target) {
             if (self.getUuid() == target.getUuid()
                 && !PLand::getInstance().getLandRegistry().isOperator(self.getUuid())) {
-                mc_utils::sendText(self, "不能添加自己为领地成员哦!"_trf(self));
+                feedback_utils::sendErrorText(self, "不能添加自己为领地成员哦!"_trf(self));
                 return;
             }
 
@@ -596,7 +594,7 @@ void LandManagerGUI::_sendAddMemberGUI(Player& player, SharedLand ptr) {
                     }
                     Player* target = weak.tryUnwrap<Player>();
                     if (!target) {
-                        mc_utils::sendText<mc_utils::LogLevel::Error>(self, "目标玩家已离线，无法继续操作!"_trf(self));
+                        feedback_utils::sendErrorText(self, "目标玩家已离线，无法继续操作!"_trf(self));
                         return;
                     }
 
@@ -606,12 +604,12 @@ void LandManagerGUI::_sendAddMemberGUI(Player& player, SharedLand ptr) {
                     }
 
                     if (ptr->isMember(target->getUuid())) {
-                        mc_utils::sendText(self, "该玩家已经是领地成员, 请不要重复添加哦!"_trf(self));
+                        feedback_utils::sendErrorText(self, "该玩家已经是领地成员, 请不要重复添加哦!"_trf(self));
                         return;
                     }
 
                     ptr->addLandMember(target->getUuid());
-                    mc_utils::sendText(self, "添加成功!"_trf(self));
+                    feedback_utils::sendText(self, "添加成功!"_trf(self));
 
                     LandMemberChangeAfterEvent ev(self, target->getUuid(), ptr->getId(), true);
                     ll::event::EventBus::getInstance().publish(ev);
@@ -631,14 +629,14 @@ void LandManagerGUI::_sendAddOfflineMemberGUI(Player& player, SharedLand ptr) {
         }
         auto playerName = std::get<std::string>(res->at("playerName"));
         if (playerName.empty()) {
-            mc_utils::sendText<mc_utils::LogLevel::Error>(self, "玩家名称不能为空!"_trf(self));
+            feedback_utils::sendErrorText(self, "玩家名称不能为空!"_trf(self));
             sendChangeMemberGUI(self, ptr);
             return;
         }
 
         auto playerInfo = ll::service::PlayerInfo::getInstance().fromName(playerName);
         if (!playerInfo) {
-            mc_utils::sendText<mc_utils::LogLevel::Error>(self, "未找到该玩家信息，请检查名称是否正确!"_trf(self));
+            feedback_utils::sendErrorText(self, "未找到该玩家信息，请检查名称是否正确!"_trf(self));
             sendChangeMemberGUI(self, ptr);
             return;
         }
@@ -646,7 +644,7 @@ void LandManagerGUI::_sendAddOfflineMemberGUI(Player& player, SharedLand ptr) {
         auto& targetUuid = playerInfo->uuid;
 
         if (self.getUuid() == targetUuid && !PLand::getInstance().getLandRegistry().isOperator(self.getUuid())) {
-            mc_utils::sendText(self, "不能添加自己为领地成员哦!"_trf(self));
+            feedback_utils::sendErrorText(self, "不能添加自己为领地成员哦!"_trf(self));
             sendChangeMemberGUI(self, ptr);
             return;
         }
@@ -675,12 +673,12 @@ void LandManagerGUI::_sendAddOfflineMemberGUI(Player& player, SharedLand ptr) {
                 }
 
                 if (ptr->isMember(targetUuid)) {
-                    mc_utils::sendText(self, "该玩家已经是领地成员, 请不要重复添加哦!"_trf(self));
+                    feedback_utils::sendErrorText(self, "该玩家已经是领地成员, 请不要重复添加哦!"_trf(self));
                     return;
                 }
 
                 ptr->addLandMember(targetUuid);
-                mc_utils::sendText(self, "添加成功!"_trf(self));
+                feedback_utils::sendText(self, "添加成功!"_trf(self));
 
                 LandMemberChangeAfterEvent ev(self, targetUuid, ptr->getId(), true);
                 ll::event::EventBus::getInstance().publish(ev);
@@ -715,7 +713,7 @@ void LandManagerGUI::_sendRemoveMemberGUI(Player& player, SharedLand ptr, mce::U
         }
 
         ptr->removeLandMember(member);
-        mc_utils::sendText(self, "移除成功!"_trf(self));
+        feedback_utils::sendText(self, "移除成功!"_trf(self));
 
         LandMemberChangeAfterEvent ev(self, member, ptr->getId(), false);
         ll::event::EventBus::getInstance().publish(ev);

@@ -8,6 +8,7 @@
 #include "pland/drawer/DrawHandleManager.h"
 #include "pland/gui/NewLandGUI.h"
 #include "pland/infra/Config.h"
+#include "pland/utils/FeedbackUtils.h"
 #include "pland/utils/McUtils.h"
 
 
@@ -31,7 +32,7 @@ ISelector::~ISelector() {
     }
 }
 
-Player* ISelector::getPlayer() const { return mPlayer.tryUnwrap<Player>().as_ptr(); }
+optional_ref<Player> ISelector::getPlayer() const { return mPlayer.tryUnwrap<Player>(); }
 
 LandDimid ISelector::getDimensionId() const { return mDimid; }
 
@@ -73,7 +74,7 @@ void ISelector::setYRange(int start, int end) {
     mPointA->y = start;
     mPointB->y = end;
     if (auto player = getPlayer()) {
-        mc_utils::sendText(player, "已设置选区高度范围: {} ~ {}"_trf(*player, mPointA->y, mPointB->y));
+        feedback_utils::sendText(player, "已设置选区高度范围: {} ~ {}"_trf(player, mPointA->y, mPointB->y));
     }
 }
 
@@ -117,7 +118,7 @@ std::string ISelector::dumpDebugInfo() const {
 // virtual
 void ISelector::onPointASet() {
     if (auto player = getPlayer()) {
-        mc_utils::sendText(player, "已选择点 A: {}"_trf(*player, *mPointA));
+        feedback_utils::sendText(player, "已选择点 A: {}"_trf(player, *mPointA));
 
         // 更新副标题
         mSubTitlePacket.mTitleText = "输入 /pland set b 或使用 '{}' 选择点 B"_trf(*player, Config::cfg.selector.alias);
@@ -126,19 +127,19 @@ void ISelector::onPointASet() {
 
 void ISelector::onPointBSet() {
     if (auto player = getPlayer()) {
-        mc_utils::sendText(player, "已选择点 B: {}"_trf(*player, *mPointB));
+        feedback_utils::sendText(player, "已选择点 B: {}"_trf(player, *mPointB));
     }
 }
 
 void ISelector::onPointAUpdated() {
     if (auto player = getPlayer()) {
-        mc_utils::sendText(player, "已更新点 A: {}"_trf(*player, *mPointA));
+        feedback_utils::sendText(player, "已更新点 A: {}"_trf(player, *mPointA));
     }
 }
 
 void ISelector::onPointBUpdated() {
     if (auto player = getPlayer()) {
-        mc_utils::sendText(player, "已更新点 B: {}"_trf(*player, *mPointB));
+        feedback_utils::sendText(player, "已更新点 B: {}"_trf(player, *mPointB));
     }
 }
 
@@ -149,7 +150,7 @@ void ISelector::onPointABSet() {
     }
 
     mTitlePacket.mTitleText    = "[ 选区完成 ]"_trf(*player);
-    mSubTitlePacket.mTitleText = "输入 /pland buy 呼出购买菜单"_trf(*player, Config::cfg.selector.alias);
+    mSubTitlePacket.mTitleText = "输入 /pland buy 呼出购买菜单"_trf(player, Config::cfg.selector.alias);
 
 
     if (!is3D()) {
@@ -162,7 +163,7 @@ void ISelector::onPointABSet() {
 
             onPointConfirmed();
         } else {
-            mc_utils::sendText<mc_utils::LogLevel::Error>(player, "获取维度失败"_trf(*player));
+            feedback_utils::sendErrorText(player, "获取维度失败"_trf(player));
         }
         return;
     }

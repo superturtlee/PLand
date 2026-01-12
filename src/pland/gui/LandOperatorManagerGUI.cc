@@ -10,6 +10,7 @@
 #include "pland/land/LandContext.h"
 #include "pland/land/LandRegistry.h"
 #include "pland/land/LandTemplatePermTable.h"
+#include "pland/utils/FeedbackUtils.h"
 #include "pland/utils/McUtils.h"
 
 
@@ -18,7 +19,7 @@ namespace land {
 
 void LandOperatorManagerGUI::sendMainMenu(Player& player) {
     if (!PLand::getInstance().getLandRegistry().isOperator(player.getUuid())) {
-        mc_utils::sendText<mc_utils::LogLevel::Error>(player, "无权限访问此表单"_trf(player));
+        feedback_utils::sendErrorText(player, "无权限访问此表单"_trf(player));
         return;
     }
 
@@ -30,7 +31,7 @@ void LandOperatorManagerGUI::sendMainMenu(Player& player) {
     fm.appendButton("管理脚下领地"_trf(player), "textures/ui/free_download", "path", [](Player& self) {
         auto lands = PLand::getInstance().getLandRegistry().getLandAt(self.getPosition(), self.getDimensionId());
         if (!lands) {
-            mc_utils::sendText<mc_utils::LogLevel::Error>(self, "您当前所处位置没有领地"_trf(self));
+            feedback_utils::sendErrorText(self, "您当前所处位置没有领地"_trf(self));
             return;
         }
         LandManagerGUI::sendMainMenu(self, lands);
@@ -48,7 +49,7 @@ void LandOperatorManagerGUI::sendMainMenu(Player& player) {
             PLand::getInstance().getLandRegistry().getLandTemplatePermTable().get(),
             [](Player& self, LandPermTable newTable) {
                 PLand::getInstance().getLandRegistry().getLandTemplatePermTable().set(newTable);
-                mc_utils::sendText(self, "权限表已更新"_trf(self));
+                feedback_utils::sendText(self, "权限表已更新"_trf(self));
             }
         );
     });

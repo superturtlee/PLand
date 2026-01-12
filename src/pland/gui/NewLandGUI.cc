@@ -17,6 +17,7 @@
 #include "pland/selector/SubLandSelector.h"
 #include "pland/service/LandManagementService.h"
 #include "pland/service/ServiceLocator.h"
+#include "pland/utils/FeedbackUtils.h"
 #include "pland/utils/McUtils.h"
 
 #include <string>
@@ -46,11 +47,11 @@ void NewLandGUI::sendChooseLandDim(Player& player) {
 
             auto expected = service.requestCreateOrdinaryLand(pl, is3D);
             if (!expected) {
-                mc_utils::sendText(pl, expected.error().message());
+                feedback_utils::sendError(pl, expected.error());
                 return;
             }
 
-            mc_utils::sendText(
+            feedback_utils::sendText(
                 pl,
                 "选区功能已开启，使用命令 /pland set 或使用 {} 来选择ab点"_trf(pl, Config::cfg.selector.tool)
             );

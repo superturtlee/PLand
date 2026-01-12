@@ -3,6 +3,7 @@
 #include "mc/world/actor/player/Player.h"
 #include "pland/PLand.h"
 #include "pland/land/LandRegistry.h"
+#include "pland/utils/FeedbackUtils.h"
 #include "pland/utils/McUtils.h"
 
 
@@ -27,7 +28,7 @@ void PlayerSettingGUI::sendTo(Player& player) {
         setting->showEnterLandTitle     = std::get<uint64_t>(res->at("showEnterLandTitle"));
         setting->showBottomContinuedTip = std::get<uint64_t>(res->at("showBottomContinuedTip"));
 
-        mc_utils::sendText<mc_utils::LogLevel::Info>(pl, "设置已保存"_trf(pl));
+        feedback_utils::sendText(pl, "设置已保存"_trf(pl));
     });
 }
 

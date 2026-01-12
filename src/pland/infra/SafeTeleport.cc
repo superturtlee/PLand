@@ -1,15 +1,18 @@
 #include "SafeTeleport.h"
+#include "pland/Global.h"
+#include "pland/PLand.h"
+#include "pland/utils/FeedbackUtils.h"
+#include "pland/utils/McUtils.h"
+
 #include "ll/api/chrono/GameChrono.h"
 #include "ll/api/thread/ServerThreadExecutor.h"
+#include <ll/api/coro/CoroTask.h>
+#include <ll/api/thread/ThreadPoolExecutor.h>
+
 #include "mc/deps/ecs/WeakEntityRef.h"
 #include "mc/network/packet/SetTitlePacket.h"
 #include "mc/world/actor/player/Player.h"
-#include "pland/Global.h"
-#include "pland/PLand.h"
-#include "pland/utils/McUtils.h"
-#include <cstdint>
-#include <ll/api/coro/CoroTask.h>
-#include <ll/api/thread/ThreadPoolExecutor.h>
+
 #include <mc/deps/core/math/Vec3.h>
 #include <mc/deps/game_refs/WeakRef.h>
 #include <mc/world/level/BlockSource.h>
@@ -18,6 +21,8 @@
 #include <mc/world/level/chunk/ChunkState.h>
 #include <mc/world/level/chunk/LevelChunk.h>
 #include <mc/world/level/dimension/Dimension.h>
+
+#include <cstdint>
 
 namespace land {
 
@@ -169,8 +174,7 @@ void SafeTeleport::Task::_findSafePos() {
         logger.debug("[TPR] Y: {}  Block: {}", y, block->getTypeName());
 #endif
 
-        if (
-            !block->isAir() &&                                 // 落脚点不是空气
+        if (!block->isAir() &&                                 // 落脚点不是空气
             !dangerousBlocks.contains(block->getTypeName()) && // 落脚点不是危险方块
             headBlock->isAir() &&                              // 头部方块是空气
             legBlock->isAir()                                  // 腿部方块是空气
@@ -275,38 +279,38 @@ void SafeTeleport::polling() {
 
 void SafeTeleport::handlePending(SharedTask& task) {
     auto& player = *task->getPlayer();
-    mc_utils::sendText(player, "[1/4] 任务已创建"_trf(player));
+    feedback_utils::sendText(player, "[1/4] 任务已创建"_trf(player));
 
     if (task->isTargetChunkFullyLoaded()) {
         task->updateState(TaskState::ChunkLoaded);
     } else {
         task->updateState(TaskState::WaitingChunkLoad);
-        mc_utils::sendText(player, "[2/4] 目标区块未加载，等待目标区块加载..."_trf(player));
+        feedback_utils::sendText(player, "[2/4] 目标区块未加载，等待目标区块加载..."_trf(player));
     }
 }
 void SafeTeleport::handleWaitingChunkLoad(SharedTask& task) { task->checkChunkStatus(); }
 void SafeTeleport::handleChunkLoadTimeout(SharedTask& task) {
     auto& player = *task->getPlayer();
-    mc_utils::sendText(player, "[2/4] 目标区块加载超时，正在返回原位置..."_trf(player));
+    feedback_utils::sendText(player, "[2/4] 目标区块加载超时，正在返回原位置..."_trf(player));
     task->rollback();
     task->updateState(TaskState::TaskFailed);
 }
 void SafeTeleport::handleChunkLoaded(SharedTask& task) {
     auto& player = *task->getPlayer();
-    mc_utils::sendText(player, "[3/4] 区块已加载，正在寻找安全位置..."_trf(player));
+    feedback_utils::sendText(player, "[3/4] 区块已加载，正在寻找安全位置..."_trf(player));
     task->launchFindPosTask();
     task->updateState(TaskState::FindingSafePos);
 }
 
 void SafeTeleport::handleFoundSafePos(SharedTask& task) {
     auto& player = *task->getPlayer();
-    mc_utils::sendText(player, "[4/4] 安全位置已找到，正在传送..."_trf(player));
+    feedback_utils::sendText(player, "[4/4] 安全位置已找到，正在传送..."_trf(player));
     task->commit();
     task->updateState(TaskState::TaskCompleted);
 }
 void SafeTeleport::handleNoSafePos(SharedTask& task) {
     auto& player = *task->getPlayer();
-    mc_utils::sendText(player, "[3/4] 未找到安全位置，正在返回原位置..."_trf(player));
+    feedback_utils::sendText(player, "[3/4] 未找到安全位置，正在返回原位置..."_trf(player));
     task->rollback();
     task->updateState(TaskState::TaskFailed);
 }
