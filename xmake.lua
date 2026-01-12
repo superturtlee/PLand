@@ -28,12 +28,6 @@ if not has_config("vs_runtime") then
     set_runtimes("MD")
 end
 
-
-option("test") -- 测试
-    set_default(false)
-    set_showmenu(true)
-option_end()
-
 option("devtool") -- 开发工具
     set_default(true)
     set_showmenu(true)
@@ -82,12 +76,6 @@ target("PLand")
     if is_mode("debug") then
         add_defines("DEBUG")
         -- add_defines("PLAND_I18N_COLLECT_STRINGS", "LL_I18N_COLLECT_STRINGS", "LL_I18N_COLLECT_STRINGS_CUSTOM")
-    end
-
-    if has_config("test") then
-        add_defines("LD_TEST")
-        add_files("test/**.cc")
-        add_includedirs("test")
     end
 
     if has_config("devtool") then

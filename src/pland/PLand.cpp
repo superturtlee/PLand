@@ -26,10 +26,6 @@
 #include "pland/selector/SelectorManager.h"
 #include "pland/service/ServiceLocator.h"
 
-#ifdef LD_TEST
-#include "TestMain.h"
-#endif
-
 #ifdef LD_DEVTOOL
 #include "DevToolApp.h"
 #endif
@@ -117,11 +113,6 @@ bool PLand::enable() {
             mImpl->mDrawHandleManager = std::make_unique<DrawHandleManager>();
         }
     );
-
-
-#ifdef LD_TEST
-    test::TestMain::setup();
-#endif
 
 #ifdef LD_DEVTOOL
     if (land::Config::cfg.internal.devTools) {
