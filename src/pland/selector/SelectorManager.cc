@@ -29,10 +29,14 @@ SelectorManager::SelectorManager() {
             }
 
             // 防抖
-            if (auto iter = mStabilization.find(player.getUuid()); iter == mStabilization.end()) {
-                iter = mStabilization.emplace(player.getUuid(), 50).first; // ms
-            } else if (!iter->second.ready()) {
-                return;
+            {
+                auto iter = mStabilization.find(player.getUuid());
+                if (iter == mStabilization.end()) {
+                    iter = mStabilization.emplace(player.getUuid(), 50).first; // ms
+                }
+                if (!iter->second.ready()) {
+                    return;
+                }
             }
 
             if (ev.item().getTypeName() != Config::cfg.selector.tool) {
