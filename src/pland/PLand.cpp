@@ -58,6 +58,7 @@ struct PLand::Impl {
 
 bool PLand::load() {
     auto& logger = getSelf().getLogger();
+    logger.info("{}-{}-{}", BuildInfo::Tag, BuildInfo::Branch, BuildInfo::Commit);
     if (BuildInfo::Branch != "main") {
         logger.warn("This is a development build. It may not be stable and may contain bugs.");
     }
