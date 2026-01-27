@@ -310,7 +310,7 @@ void Land::updateXUIDToUUID(mce::UUID const& ownerUUID) {
 }
 
 void Land::load(nlohmann::json& json) {
-    json_util::json2struct(json, mContext);
+    json_util::json2structWithVersionPatch(json, mContext);
     _initCache();
 }
 nlohmann::json Land::dump() const { return json_util::struct2json(mContext); }

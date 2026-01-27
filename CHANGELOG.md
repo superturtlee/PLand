@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.1] - 2026-01-28
+
+### 🐛 问题修复
+
+- 修复低版本数据加载失败 @engsr6982
+
+### 🧹 其他改动
+
+- 调整 `PlayerRequestCreateLandEvent::type()` 符号可见性 @engsr6982
+
 ## [0.17.0] - 2026-01-27
 
 ### 🐛 问题修复

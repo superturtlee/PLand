@@ -50,7 +50,7 @@ inline void json2structWithVersionPatch(J& j, T& obj) {
     if (!j.contains("version") || (int64)(j["version"]) != obj.version) {
         noNeedMerge = false;
     }
-    if (noNeedMerge || std::invoke(_VersionPatcher, obj, j)) {
+    if (noNeedMerge || _VersionPatcher(obj, j)) {
         ll::reflection::deserialize(obj, j).value();
     }
 }
