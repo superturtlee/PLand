@@ -32,7 +32,7 @@ SelectorManager::SelectorManager() {
             {
                 auto iter = mStabilization.find(player.getUuid());
                 if (iter == mStabilization.end()) {
-                    iter = mStabilization.emplace(player.getUuid(), 50).first; // ms
+                    iter = mStabilization.emplace(player.getUuid(), 80).first; // ms
                 }
                 if (!iter->second.ready()) {
                     return;

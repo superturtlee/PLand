@@ -48,10 +48,6 @@ public:
 
     explicit ParticleSpawner(LandAABB const& aabb, LandDimid dimId) : mId(getNextGeoId()) {
         static std::optional<MolangVariableMap> molang{std::nullopt};
-        if (!molang) {
-            molang = MolangVariableMap{}; // TODO: 验证 Molang 是否真的有效
-            molang->setMolangVariable("variable.particle_lifetime", 25);
-        }
 
         auto maybeDimid = VanillaDimensions::fromSerializedInt(dimId);
         if (!maybeDimid.has_value()) {
